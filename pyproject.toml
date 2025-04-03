@@ -1,0 +1,6 @@
+[tool.ruff]
+exclude = [
+    ".venv",
+]
+line-length = 120
+indent-width = 4
