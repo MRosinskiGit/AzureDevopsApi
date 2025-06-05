@@ -27,6 +27,7 @@ git clone https://github.com/your-username/AzApi.git
 cd AzApi
 pip install -r requirements.txt
 ```
+And create .env file in main directory like in the template. Project name, PAT and Organization name are manatories. Repo and Pool names are optional depends on used components.
 
 ## Authentication
 
