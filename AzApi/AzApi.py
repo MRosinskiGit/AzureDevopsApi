@@ -1,6 +1,11 @@
 import base64
+
+import requests
 from loguru import logger
-from .utils.AzApi_repos import AzRepos
+
+from .utils.AzApi_agents import _AzAgents
+from .utils.AzApi_boards import _AzBoards
+from .utils.AzApi_repos import _AzRepos
 
 
 class AzApi:
@@ -11,10 +16,16 @@ class AzApi:
         self.__b64_token = ...
         self.__token = ...
         self.token = token
+        self.__users_data = ...
 
         # Components
-        self.__repo_name = ""
-        self.Repo = AzRepos(self, self.__repo_name)
+        self.__repo_name: str = ...
+        self.Repo: _AzRepos = ...
+
+        self.Boards = _AzBoards(self)
+
+        self.__pool_name = ...
+        self.Agents: _AzAgents = ...
 
     @property
     def token(self):
@@ -38,7 +49,18 @@ class AzApi:
             logger.error(f"{name} is not a valid repository name.")
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         self.__repo_name = name
-        self.Repo = AzRepos(self, self.__repo_name)
+        self.Repo = _AzRepos(self, self.__repo_name)
+
+    @property
+    def agent_pool_name(self):
+        return self.__pool_name
+
+    @agent_pool_name.setter
+    def agent_pool_name(self, pool_name: str):
+        if not isinstance(pool_name, str) or not pool_name.strip():
+            logger.error(f"{pool_name} is not a valid pool name.")
+            raise AttributeError("Invalid pool name: must be a non-empty string.")
+        self.Agents = _AzAgents(self, pool_name)
 
     def _headers(self, content_type: str = "application/json-patch+json"):
         return {
@@ -46,3 +68,61 @@ class AzApi:
             "Authorization": f"Basic {self.__b64_token}",
         }
 
+    def __get_list_of_all_org_users(self) -> dict:
+        url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
+        response = requests.get(url, headers=self._headers())
+        if response.status_code != 200:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+
+        all_data_dict = {}
+        for user in response.json()["value"]:
+            if user.get("mailAddress"):
+                all_data_dict.update({user.get("mailAddress").lower(): user})
+        logger.debug(f"Downloading data... Currently downloaded: {len(all_data_dict)} records.")
+        continuation_token = response.headers.get("x-ms-continuationtoken")
+        logger.trace(f"Next page token: {continuation_token}")
+
+        while continuation_token:
+            url = f"https://vssps.dev.azure.com/SW4ZF/_apis/graph/users?api-version=7.2-preview.1&continuationToken={continuation_token}"
+            response = requests.get(url, headers=self._headers())
+            if response.status_code != 200:
+                logger.error(f"Connection error: {response.status_code}")
+                logger.debug(f"Error message: {response.text}")
+                raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+
+            for user in response.json()["value"]:
+                if user.get("mailAddress"):
+                    all_data_dict.update({user.get("mailAddress").lower(): user})
+            logger.debug(f"Downloading data... Currently downloaded:{len(all_data_dict)}")
+            continuation_token = response.headers.get("x-ms-continuationtoken")
+            logger.debug(f"Next page token: {continuation_token}")
+        logger.success("No continuation token — Download complete.")
+        return all_data_dict
+
+    def search_user_aad_descriptor_by_email(self, email):
+        logger.info(f"Searching Active Domain descriptor for email {email}")
+        if self.__users_data is Ellipsis:
+            logger.info("Users database empty. Downloading...")
+            self.__users_data = self.__get_list_of_all_org_users()
+        user = self.__users_data.get(email)
+        if not user:
+            logger.warning("User not found.")
+            return
+        descriptor = user.get("descriptor")
+        logger.success(f"Descriptor found: {descriptor}")
+        return descriptor
+
+    def get_guid_by_descriptor(self, descriptor):
+        logger.info(f"Reading GUID for descriptor {descriptor}")
+        url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
+        response = requests.get(url, headers=self._headers())
+        if response.status_code != 200:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+        response = response.json()
+        guid = response.get("value")
+        logger.success(f"GUID found: {guid}")
+        return guid

@@ -1,12 +1,16 @@
 import os
 import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Union
+from typing import Union, Optional
 
 import requests
 from loguru import logger
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from AzApi.AzApi import AzApi
 
 
 def _require_valid_repo_name(method):
@@ -20,10 +24,11 @@ def _require_valid_repo_name(method):
     return wrapper
 
 
-class AzRepos:
+class _AzRepos:
     def __init__(self, api: "AzApi", repo_name):  # noqa: F821
         self.__repo_name = repo_name
         self.__azure_api = api
+        logger.success("Repository Module initiated.")
 
     @_require_valid_repo_name
     def get_active_pull_requests(self, raw=False):
@@ -109,8 +114,10 @@ class AzRepos:
         return f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}/pullrequest/{pr_id}"
 
     @_require_valid_repo_name
-    def clone_repository(self, output_dir, depth=None, branch=None, submodules=False):
-        logger.info(f"Cloning repository {self.__repo_name}")
+    def clone_repository(
+        self, output_dir: str, submodules: bool = False, depth: Optional[int] = None, branch: Optional[str] = None
+    ):
+        logger.info(f"Cloning repository {self.__repo_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
         git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
@@ -124,7 +131,6 @@ class AzRepos:
             command += f"--depth {depth} "
         env = os.environ.copy()
 
-        logger.debug("Clone repository")
         proc = subprocess.Popen(
             command,
             cwd=output_dir,
@@ -146,9 +152,6 @@ class AzRepos:
             executor.submit(__thread_pool_stream_reader, proc.stderr, logger.trace)
             logger.debug("Reading stderr initialized...")
 
-        logger.debug("Remove token configuration")
-        subprocess.run("git config --global --unset-all http.https://SW4ZF@dev.azure.com/.extraHeader")
-
         if proc.wait() != 0:
             logger.error(f"Error on cloning - Return code {proc.wait()}")
             raise RuntimeError
@@ -156,8 +159,25 @@ class AzRepos:
         try:
             proc.terminate()
             proc.wait(timeout=5)
-            logger.success("Process terminated.")
+            logger.success("Cloning process terminated.")
         except subprocess.TimeoutExpired:
             logger.warning("Terminate timed out. Killing process.")
             proc.kill()
             proc.wait()
+
+    @_require_valid_repo_name
+    def add_pr_reviewer(self, pr_id: int, email: str):
+        logger.info(f"Adding User {email} to PR{pr_id}")
+        descriptor = self.__azure_api.search_user_aad_descriptor_by_email("m.rosinski97@gmail.com")
+        guid = self.__azure_api.get_guid_by_descriptor(descriptor)
+        url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}/reviewers/{guid}?api-version=7.2-preview.1"
+        payload = {
+            "id": guid,
+            "vote": 0,
+        }
+        response = requests.put(url, json=payload, headers=self.__azure_api._headers("application/json"))
+        if response.status_code not in [200, 201]:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success(f"Response: {response.status_code}, User added as reviewer.")
