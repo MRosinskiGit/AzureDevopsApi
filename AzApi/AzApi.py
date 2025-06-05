@@ -1,4 +1,5 @@
 import base64
+from typing import Union, Dict
 
 import requests
 from loguru import logger
@@ -10,6 +11,13 @@ from .utils.AzApi_repos import _AzRepos
 
 class AzApi:
     def __init__(self, organization: str, project: str, token: str):
+        """
+        Constructor for AzApi Tool.
+        Args:
+            organization (str): Azure's organization/owner name.
+            project (str): Azure's Project name.
+            token (str): Private Access Token for Azures Operations.
+        """
         logger.info("Initializing AzApi Tool...")
         self.organization = organization
         self.project = project
@@ -28,11 +36,23 @@ class AzApi:
         self.Agents: _AzAgents = ...
 
     @property
-    def token(self):
+    def token(self) -> str:
+        """
+        Getter for current PAT. It output only part of token for security.
+        Returns:
+            str: Encoded PAT
+        """
         return self.__token[:3] + "***" + self.__token[-3:]
 
     @token.setter
-    def token(self, token):
+    def token(self, token: str) -> None:
+        """
+        Setter for PAT.
+        Args:
+            token (str): Private Access Token
+        Raises:
+             TypeError: if token is not a string type
+        """
         if not isinstance(token, str):
             raise TypeError("Token is not a string object.")
         self.__token = token
@@ -40,11 +60,25 @@ class AzApi:
         logger.success("Private Access Token is set.")
 
     @property
-    def repository_name(self):
+    def repository_name(self) -> Union[str, Ellipsis]:
+        """
+        Getter for current repository name.
+        Returns:
+            str: Repository name
+            of
+            Ellipsis: if Repo name is not yet set.
+        """
         return self.__repo_name
 
     @repository_name.setter
     def repository_name(self, name: str):
+        """
+        Setter for repository name. If repository name is valid it initiates constructor for AzRepos component.
+        Args:
+            name (str): Azures repository name.
+        Raises:
+            AttributeError: If `name` is not a string object or is empty string.
+        """
         if not isinstance(name, str) or not name.strip():
             logger.error(f"{name} is not a valid repository name.")
             raise AttributeError("Invalid repository name: must be a non-empty string.")
@@ -52,30 +86,56 @@ class AzApi:
         self.Repo = _AzRepos(self, self.__repo_name)
 
     @property
-    def agent_pool_name(self):
+    def agent_pool_name(self) -> Union[str, Ellipsis]:
+        """
+        Getter for current agent's pool name.
+        Returns:
+            str: Name of Agent's Pool
+            of
+            Ellipsis: if agent pool name is not yet set.
+        """
         return self.__pool_name
 
     @agent_pool_name.setter
     def agent_pool_name(self, pool_name: str):
+        """
+        Setter for Agent's Pool name. If Pool name is valid it initiates constructor for AzRepos component.
+        Args:
+            pool_name (str): Agent's pool name
+        Raises:
+            AttributeError: If `pool_name` is not a string object or is empty string.
+        """
         if not isinstance(pool_name, str) or not pool_name.strip():
             logger.error(f"{pool_name} is not a valid pool name.")
             raise AttributeError("Invalid pool name: must be a non-empty string.")
+        self.__pool_name = pool_name
         self.Agents = _AzAgents(self, pool_name)
 
-    def _headers(self, content_type: str = "application/json-patch+json"):
+    def _headers(self, content_type: str = "application/json-patch+json") -> dict:
+        """
+        Private method to generate REST header with authentication method and provided data structure.
+        Args:
+            content_type (str): application/json-patch+json or application/json
+        Returns:
+            dict: dict ready for requests library.
+        """
         return {
             "Content-Type": content_type,
             "Authorization": f"Basic {self.__b64_token}",
         }
 
-    def __get_list_of_all_org_users(self) -> dict:
+    def __get_list_of_all_org_users(self) -> Dict[str, dict]:
+        """
+        Private method to download all organization's user's accounts data.
+        Returns:
+            dict(str: dict): (userEmail: {userData}) Dict with all accounts data sorted with account's email as key.
+        """
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
             raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
-
         all_data_dict = {}
         for user in response.json()["value"]:
             if user.get("mailAddress"):
@@ -101,7 +161,17 @@ class AzApi:
         logger.success("No continuation token — Download complete.")
         return all_data_dict
 
-    def search_user_aad_descriptor_by_email(self, email):
+    def search_user_aad_descriptor_by_email(self, email: str) -> Union[str, None]:
+        """
+        Searches unique user's AAD identifier in the user's database. Descriptor is required to get unique Global User
+        ID (GUID) for repository operations.
+        Args:
+            email: User's email.
+        Returns:
+            str: User's unique Azure Active Domain descriptor.
+            or
+            None: If email was not found in database.
+        """
         logger.info(f"Searching Active Domain descriptor for email {email}")
         if self.__users_data is Ellipsis:
             logger.info("Users database empty. Downloading...")
@@ -109,12 +179,21 @@ class AzApi:
         user = self.__users_data.get(email)
         if not user:
             logger.warning("User not found.")
-            return
+            return None
         descriptor = user.get("descriptor")
         logger.success(f"Descriptor found: {descriptor}")
         return descriptor
 
-    def get_guid_by_descriptor(self, descriptor):
+    def get_guid_by_descriptor(self, descriptor: str) -> str:
+        """
+        Based on provided AAD Descriptor sends requests to get user's GUID (Global User ID).
+        Args:
+            descriptor (str): User's AAD Descriptor
+        Returns:
+            str: User's GUID
+        Raises:
+            requests.RequestException: When API Request was not successful.
+        """
         logger.info(f"Reading GUID for descriptor {descriptor}")
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
