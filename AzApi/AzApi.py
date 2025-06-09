@@ -28,12 +28,12 @@ class AzApi:
 
         # Components
         self.__repo_name: str = ...
-        self.Repo: _AzRepos = ...
+        self.__Repos: _AzRepos = ...
 
         self.Boards = _AzBoards(self)
 
         self.__pool_name = ...
-        self.Agents: _AzAgents = ...
+        self.__Agents: _AzAgents = ...
 
     @property
     def token(self) -> str:
@@ -59,6 +59,10 @@ class AzApi:
         self.__b64_token = base64.b64encode(f":{self.__token}".encode()).decode()
         logger.success("Private Access Token is set.")
 
+    class ComponentException(Exception):
+        def __init__(self, msg="Component was not initiated."):
+            super().__init__(msg)
+
     @property
     def repository_name(self) -> Union[str, Ellipsis]:
         """
@@ -83,7 +87,22 @@ class AzApi:
             logger.error(f"{name} is not a valid repository name.")
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         self.__repo_name = name
-        self.Repo = _AzRepos(self, self.__repo_name)
+        self.__Repos = _AzRepos(self, self.__repo_name)
+
+    @property
+    def Repos(self) -> _AzRepos:
+        """
+        Getter for AzRepos component.
+        Returns:
+            _AzRepos: AzRepos instance.
+        Raises:
+            AzApi.ComponentException: When component is not initiated.
+        """
+        if self.__Repos is Ellipsis:
+            raise AzApi.ComponentException(
+                "Repository Component was not initiated. Please set `repository name` attribute."
+            )
+        return self.__Repos
 
     @property
     def agent_pool_name(self) -> Union[str, Ellipsis]:
@@ -109,7 +128,22 @@ class AzApi:
             logger.error(f"{pool_name} is not a valid pool name.")
             raise AttributeError("Invalid pool name: must be a non-empty string.")
         self.__pool_name = pool_name
-        self.Agents = _AzAgents(self, pool_name)
+        self.__Agents = _AzAgents(self, pool_name)
+
+    @property
+    def Agents(self) -> _AzAgents:
+        """
+        Getter for AzAgents component.
+        Returns:
+            _AzAgents: AzAgents instance.
+        Raises:
+            AzApi.ComponentException: When component is not initiated.
+        """
+        if self.__Agents is Ellipsis:
+            raise AzApi.ComponentException(
+                "AzAgents Component was not initiated. Please set `agent_pool_name` attribute."
+            )
+        return self.__Agents
 
     def _headers(self, content_type: str = "application/json-patch+json") -> dict:
         """
@@ -128,7 +162,11 @@ class AzApi:
         """
         Private method to download all organization's user's accounts data.
         Returns:
-            dict(str: dict): (userEmail: {userData}) Dict with all accounts data sorted with account's email as key.
+           Dict[str, dict]: Dict with all accounts data sorted with account's email as key.
+        Example:
+            >>> self.__get_list_of_all_org_users()
+            {"user1@gmail.com": {... "principalName":"user1@gmail.com","mailAddress":"user1@gmail.com","origin":"msa","originId":"00034001089CAF73" ...},
+            {"user2@gmail.com": {... "principalName":"user2@gmail.com","mailAddress":"user2@gmail.com","origin":"msa","originId":"00034001089CAF74" ...}}
         """
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())

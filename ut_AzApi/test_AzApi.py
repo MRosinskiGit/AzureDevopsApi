@@ -1,18 +1,19 @@
 import base64
 
 import pytest
+from loguru import logger
 
 from AzApi.AzApi import AzApi
 from unittest.mock import patch, MagicMock
 
-from tests_AzApi.testdata import (
+from ut_AzApi.testdata import (
     get_list_of_all_org_users_mock_continuous,
     get_list_of_all_org_users_mock_single_use,
     get_guid_by_descriptor_mock,
 )
 
 
-# logger.configure(handlers={})
+logger.configure(handlers={})
 
 
 @pytest.fixture

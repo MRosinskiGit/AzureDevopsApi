@@ -2,7 +2,7 @@ import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 
 import requests
 from loguru import logger
@@ -31,7 +31,25 @@ class _AzRepos:
         logger.success("Repository Module initiated.")
 
     @_require_valid_repo_name
-    def get_active_pull_requests(self, raw=False):
+    def get_active_pull_requests(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+        """
+        Gets all active Pull Requests in defined repository.
+        Args:
+            raw (bool): simplified or raw response. If true main key is ID of PR
+        Returns:
+            raw:
+                list: list of dicts with parameters
+            simplified:
+                dict: json returned by endpoint, keys are PR IDs
+        Examples:
+            >>> api.Repos.get_active_pull_requests(raw=False)
+            { 12: {
+                "title": "Test Pullrequest",
+                "url": "https://dev.azure.com/org/project/_git/repo/pullrequest/12",
+                "creationDate": "2025-06-04T06:58:04.8778256Z",
+                "sourceRefName": "refs/heads/testbranch",
+                "targetRefName": "refs/heads/master"}}
+        """
         logger.info("Downloading list of active Pull Requests...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
@@ -60,7 +78,21 @@ class _AzRepos:
         }
 
     @_require_valid_repo_name
-    def create_pr(self, pr_title, source_branch, target_branch, description="") -> Union[int, None]:
+    def create_pr(self, pr_title: str, source_branch: str, target_branch: str, description: Optional[str] = "") -> int:
+        """
+        Creates Pull Request for specific branch.
+        Args:
+            pr_title (str): Pull Request title.
+            source_branch (str): Source branch name. Method accepts both namings with or without refs/heads.
+            target_branch (str): Target branch name.
+            description (Optional[str]): Description of pull request
+
+        Returns:
+            int: ID of created PR.
+        Examples:
+            >>> pr_id1 = api.Repos.create_pr("Test PullRequest1", "TestBranch", "main", "Testing API Request.")
+            >>> pr_id2 = api.Repos.create_pr("Test PullRequest2", "refs/heads/branch2", "refs/heads/main", "Testing API Request.")
+        """
         logger.info(f"Creating new PR: {pr_title}")
         if "refs/head" not in source_branch:
             source_branch = "refs/heads/" + source_branch
@@ -91,7 +123,22 @@ class _AzRepos:
         return pr_id
 
     @_require_valid_repo_name
-    def get_all_branches(self, raw=False):
+    def get_all_branches(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+        """
+        Reads all existing branches on the repo.
+        Args:
+            raw (bool): simplified or raw response.
+
+        Returns:
+            raw:
+                list: list of dicts
+            simplified:
+                dict: keys are branch names.
+
+        Examples:
+            >>> api.Repos.get_all_branches(raw = False)
+            {"refs/heads/master": {"creator": "NameUser SurnameUser"}}
+        """
         logger.info("Reading list of all branches...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/refs?filter=heads/&api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
@@ -110,19 +157,44 @@ class _AzRepos:
         }
 
     @_require_valid_repo_name
-    def get_pullrequest_url(self, pr_id):
+    def get_pullrequest_url(self, pr_id: int) -> str:
+        """
+        Generates direct URL to Pull Request based on ID.
+        Args:
+            pr_id (int): ID of Pull request to generate url.
+
+        Returns:
+            str: url link to PR.
+        """
         return f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}/pullrequest/{pr_id}"
 
-    @_require_valid_repo_name
     def clone_repository(
-        self, output_dir: str, submodules: bool = False, depth: Optional[int] = None, branch: Optional[str] = None
+        self,
+        output_dir: str,
+        submodules: bool = False,
+        depth: Optional[int] = None,
+        branch: Optional[str] = None,
+        **kwargs,
     ):
-        logger.info(f"Cloning repository {self.__repo_name}...")
+        """
+        Downloads repository to defined output directory.
+        Args:
+            output_dir (str): path to output dir.
+            submodules (bool): flag to mark if submodules also should be downloaded
+            depth (Optional[int]): depth of downloaded history of modifications on repository
+            branch (Optional[str]): name of branch to download if different from default
+            **kwargs:
+                custom_url (Optional[str]): link to different repository then defined in parent AzApi class.
+        """
+        custom_url = kwargs.get("custom_url")
+        repo_log_name = custom_url if custom_url is not None else self.__repo_name
+        logger.info(f"Cloning repository {repo_log_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
-        git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
+        if not custom_url:
+            git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
 
-        command += f"{git_url} "
+        command += f"{custom_url if custom_url else git_url} "
         if submodules:
             command += "--recurse-submodules --shallow-submodules "
         if branch:
@@ -167,8 +239,14 @@ class _AzRepos:
 
     @_require_valid_repo_name
     def add_pr_reviewer(self, pr_id: int, email: str):
+        """
+        Adds reviewer to Pull Request.
+        Args:
+            pr_id (int): ID of pull request
+            email (str): mail of the reviewer.
+        """
         logger.info(f"Adding User {email} to PR{pr_id}")
-        descriptor = self.__azure_api.search_user_aad_descriptor_by_email("m.rosinski97@gmail.com")
+        descriptor = self.__azure_api.search_user_aad_descriptor_by_email(email)
         guid = self.__azure_api.get_guid_by_descriptor(descriptor)
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}/reviewers/{guid}?api-version=7.2-preview.1"
         payload = {
