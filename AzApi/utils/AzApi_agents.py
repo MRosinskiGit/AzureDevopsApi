@@ -83,21 +83,24 @@ class _AzAgents:
         return result
 
     def __resolve_agent_key(self, key, by: AgentsBy):
-        if by == AgentsBy.ID:
-            return key
-        elif by == AgentsBy.Agent_Name:
-            _ = key
-            key = self.__all_agents[key]["id"]
-            logger.trace(f"Swapping {_} to {key}")
-            return key
-        elif by == AgentsBy.PC_Name:
-            for agent, agent_data in self.__all_agents.items():
-                if agent_data.get("pc_name") == key:
-                    _ = key
-                    key = agent_data.get("id")
-                    logger.trace(f"Swapping {_} to {key}")
-                    return key
-                raise KeyError(f"{key} not found in all agents list.")
+        match by:
+            case AgentsBy.ID:
+                return key
+            case AgentsBy.Agent_Name:
+                _ = key
+                key = self.__all_agents[key]["id"]
+                logger.trace(f"Swapping {_} to {key}")
+                return key
+            case AgentsBy.PC_Name:
+                for agent, agent_data in self.__all_agents.items():
+                    if agent_data.get("pc_name") == key:
+                        _ = key
+                        key = agent_data.get("id")
+                        logger.trace(f"Swapping {_} to {key}")
+                        return key
+                    raise KeyError(f"{key} not found in all agents list.")
+            case _:
+                raise AttributeError(f"{by} is not recognised AgentsBy object.")
 
     @_require_valid_pool_name
     def get_agent_capabilities(self, key, by: AgentsBy) -> dict:
