@@ -90,7 +90,7 @@ class AzApi:
         self.__Repos = _AzRepos(self, self.__repo_name)
 
     @property
-    def Repos(self):
+    def Repos(self) -> _AzRepos:
         """
         Getter for AzRepos component.
         Returns:
@@ -131,7 +131,7 @@ class AzApi:
         self.__Agents = _AzAgents(self, pool_name)
 
     @property
-    def Agents(self):
+    def Agents(self) -> _AzAgents:
         """
         Getter for AzAgents component.
         Returns:
