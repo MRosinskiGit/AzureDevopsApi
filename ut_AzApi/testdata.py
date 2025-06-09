@@ -1,6 +1,6 @@
 import json
 from unittest.mock import MagicMock, Mock
-
+# ruff: noqa
 # fmt: off
 
 # AzApi

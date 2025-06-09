@@ -92,7 +92,7 @@ class _AzAgents:
                 logger.trace(f"Swapping {_} to {key}")
                 return key
             case AgentsBy.PC_Name:
-                for agent, agent_data in self.__all_agents.items():
+                for _, agent_data in self.__all_agents.items():
                     if agent_data.get("pc_name") == key:
                         _ = key
                         key = agent_data.get("id")

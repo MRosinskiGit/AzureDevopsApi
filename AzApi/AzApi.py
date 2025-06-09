@@ -167,7 +167,7 @@ class AzApi:
             >>> self.__get_list_of_all_org_users()
             {"user1@gmail.com": {... "principalName":"user1@gmail.com","mailAddress":"user1@gmail.com","origin":"msa","originId":"00034001089CAF73" ...},
             {"user2@gmail.com": {... "principalName":"user2@gmail.com","mailAddress":"user2@gmail.com","origin":"msa","originId":"00034001089CAF74" ...}}
-        """
+        """  # noqa: E501
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != 200:

@@ -28,7 +28,7 @@ def test_AzApi_repo_init_posivie():
     api = AzApi("Org", "Pro", "123")
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
-        api.Repos
+        _ = api.Repos
     api.repository_name = "Repos2"
     assert api.repository_name == "Repos2"
     assert api.Repos is not Ellipsis
@@ -41,7 +41,7 @@ def test_AzApi_repo_init_negative(repo_name):
         api.repository_name = repo_name
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
-        api.Repos
+        _ = api.Repos
 
 
 class Tests_AzApi_repos:
@@ -151,8 +151,10 @@ class Tests_AzApi_repos:
 
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
+            cmd_submodules = "--recurse-submodules --shallow-submodules "
             assert args[0] == (
-                f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {'--recurse-submodules --shallow-submodules ' if submodules else ''}{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
+                f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {cmd_submodules if submodules else ''}"
+                f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
 
     @pytest.mark.parametrize(
@@ -181,8 +183,10 @@ class Tests_AzApi_repos:
 
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
+            cmd_submodules = "--recurse-submodules --shallow-submodules "
             assert args[0] == (
-                f"git clone https://gitrepolink.git {'--recurse-submodules --shallow-submodules ' if submodules else ''}{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
+                f"git clone https://gitrepolink.git {cmd_submodules if submodules else ''}"
+                f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
 
     def test_add_pr_reviever(self):
