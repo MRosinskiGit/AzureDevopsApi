@@ -17,7 +17,7 @@ def _require_valid_repo_name(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         repo_name = getattr(self, "_AzRepos__repo_name", None)
-        if not isinstance(repo_name, str) or not repo_name.strip():
+        if not isinstance(repo_name, str) or repo_name == "":
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         return method(self, *args, **kwargs)
 

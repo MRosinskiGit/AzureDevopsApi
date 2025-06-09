@@ -83,7 +83,7 @@ class AzApi:
         Raises:
             AttributeError: If `name` is not a string object or is empty string.
         """
-        if not isinstance(name, str) or not name.strip():
+        if not isinstance(name, str) or name == "":
             logger.error(f"{name} is not a valid repository name.")
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         self.__repo_name = name

@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from loguru import logger
 
 from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_repos import _AzRepos
 
 from ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
@@ -105,7 +106,6 @@ class Tests_AzApi_repos:
             pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
         assert pr_number == 1
 
-    @pytest.mark.skip
     @pytest.mark.parametrize(
         "method, params",
         [
@@ -117,6 +117,7 @@ class Tests_AzApi_repos:
     )
     def test_repo_name_validation_decorator(self, method, params):
         new_api = AzApi("Org", "Pro", "123")
+        new_api._AzApi__Repos = _AzRepos(new_api, "")
         with pytest.raises(AttributeError):
             fun = getattr(new_api.Repos, method)
             if params:
