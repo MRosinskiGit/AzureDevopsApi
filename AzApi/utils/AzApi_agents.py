@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
-    pass
+    from AzApi.AzApi import AzApi
 import requests
 
 
