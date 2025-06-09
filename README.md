@@ -1,3 +1,5 @@
+from AzApi.utils.AzApi_boards import WorkItemsDef
+
 # AzApi
 
 **AzApi** is a complementary Python library designed to simplify and unify access to various Azure DevOps services via the REST API.
@@ -16,7 +18,7 @@ AzApi provides a modular, object-oriented interface to the most commonly used Az
 
 - Python 3.11+
 - A Personal Access Token (PAT) with appropriate Azure DevOps permissions
-- Dependencies listed in `requirements.txt`
+- Dependencies listed in `requirements-prod.txt`
 
 ## Installation
 
@@ -25,44 +27,49 @@ Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/your-username/AzApi.git
 cd AzApi
-pip install -r requirements.txt
+pip install -r requirements-prod.txt
 ```
-And create .env file in main directory like in the template. Project name, PAT and Organization name are manatories. Repo and Pool names are optional depends on used components.
 
 ## Authentication
 
-Authentication is handled via a Personal Access Token (PAT). You will need to provide the token when initializing the main API class.
+Authentication is handled via a Personal Access Token (PAT). You will need to provide the token when initializing the main API class and pass it to AzApi class as `token` attribute.
 
 ## Usage
 
-See the [`examples.py`](examples.py) file for practical usage of each module. Example:
+See the [`examples.py`](examples.py) file for practical usage of each module. Short example:
 
 ```python
-from AzApi.AzApi import AzApi 
-api = AzApi(organization='ORG', project='PRO', token='PAT')
-api.repository_name = 'REPO'
-api.agent_pool_name = 'POOL'
+from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
+api = AzApi(organization="ORGANIZATION_NAME", project="PROJECT_NAME", token="PAT")
+api.repository_name = 'REPO_NAME'
+api.agent_pool_name = 'POOL_NAME'
 
 task_id = api.Boards.create_new_item(
     WorkItemsDef.Task, item_name="Review Task", description="Review Task for Documentation"
 )
 api.Boards.change_work_item_state(task_id, WorkItemsStatesDef.Task.Done)
-all_branches_list = api.Repo.get_all_branches()
-prs = api.Repo.get_active_pull_requests()
-pr_id = api.Repo.create_pr("Test PullRequest", "TestBranch", "main", "Testing API Request.")
-api.Repo.add_pr_reviewer(pr_id, "user1@gmail.com")
+all_branches_list = api.Repos.get_all_branches()
+prs = api.Repos.get_active_pull_requests()
+pr_id = api.Repos.create_pr("Test PullRequest", "TestBranch", "main", "Testing API Request.")
+api.Repos.add_pr_reviewer(pr_id, "user1@gmail.com")
 
 ```
 
 ## Testing
 
-The repository includes both unit and integration tests, located in the `tests_azapi` folder.
-
+The repository includes both unit and integration tests, located in the `ut_AzApi` folder.
+For testing install prod dependencies:
+```bash
+pip install -r requirements-prod.txt
+```
 To run all tests set working directory to main project dir and:
 
 ```bash
 pytest .\tests_AzApi\
 ```
+
+or start `tools/run_test.bat` for test report and coverage logs.
 
 
 ## License

@@ -1,5 +1,3 @@
-import os
-
 from AzApi.AzApi import AzApi
 import tempfile
 
@@ -8,18 +6,13 @@ from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
 
 # Examples:
 ## Init
-ORG = os.getenv("ORGANIZATION")
-PRO = os.getenv("PROJECT")
-PAT = os.getenv("PAT")
-api = AzApi(organization=ORG, project=PRO, token=PAT)
+api = AzApi(organization="ORGANIZATION_NAME", project="PROJECT_NAME", token="PAT")
 
 ## Init Repo Component
-REPO = os.getenv("REPOSITORY")
-api.repository_name = REPO
+api.repository_name = "REPOSITORY_NAME"
 
 ## Init Agents Pool Component
-POOL = os.getenv("AGENT_POOL")
-api.agent_pool_name = POOL
+api.agent_pool_name = "AGENT_POOL_NAME"
 
 # Boards Examples:
 ## Create new Task and TestCase Objects in Boards
