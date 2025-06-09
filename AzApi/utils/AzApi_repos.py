@@ -115,14 +115,22 @@ class _AzRepos:
 
     @_require_valid_repo_name
     def clone_repository(
-        self, output_dir: str, submodules: bool = False, depth: Optional[int] = None, branch: Optional[str] = None
+        self,
+        output_dir: str,
+        submodules: bool = False,
+        depth: Optional[int] = None,
+        branch: Optional[str] = None,
+        **kwargs,
     ):
-        logger.info(f"Cloning repository {self.__repo_name}...")
+        custom_url = kwargs.get("custom_url")
+        repo_log_name = custom_url if custom_url is not None else self.__repo_name
+        logger.info(f"Cloning repository {repo_log_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
-        git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
+        if not custom_url:
+            git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
 
-        command += f"{git_url} "
+        command += f"{custom_url if custom_url else git_url} "
         if submodules:
             command += "--recurse-submodules --shallow-submodules "
         if branch:
@@ -168,7 +176,7 @@ class _AzRepos:
     @_require_valid_repo_name
     def add_pr_reviewer(self, pr_id: int, email: str):
         logger.info(f"Adding User {email} to PR{pr_id}")
-        descriptor = self.__azure_api.search_user_aad_descriptor_by_email("m.rosinski97@gmail.com")
+        descriptor = self.__azure_api.search_user_aad_descriptor_by_email(email)
         guid = self.__azure_api.get_guid_by_descriptor(descriptor)
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}/reviewers/{guid}?api-version=7.2-preview.1"
         payload = {
