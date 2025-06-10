@@ -6,6 +6,7 @@ from AzApi.utils.AzApi_boards import WorkItemsDef
 
 > **Status**: Beta – under active development
 
+Current progress and expected features are described in [`CHANGELOG.md`](CHANGELOG.md).
 ## Features
 
 AzApi provides a modular, object-oriented interface to the most commonly used Azure DevOps services:
