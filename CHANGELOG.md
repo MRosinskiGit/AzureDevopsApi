@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added 
 - Boards docs ✔
-- Boards ut ✘
+- Boards ut ✔
 - Agents docs ✔
-- Agents ut ✘
+- Agents ut ✔
 - System tests ✘
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘

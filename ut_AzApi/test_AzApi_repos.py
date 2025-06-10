@@ -25,7 +25,7 @@ def api_mock():
         yield {"get": mock_get, "post": mock_post, "response": mock_response, "put": mock_put}
 
 
-def test_AzApi_repo_init_posivie():
+def test_AzApi_repo_init_positivie():
     api = AzApi("Org", "Pro", "123")
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
@@ -131,9 +131,9 @@ class Tests_AzApi_repos:
     @pytest.mark.parametrize(
         "submodules, depth, branch, cwd",
         [
-            ("True", 2, "test/dev", ".output"),
-            ("True", None, None, "/"),
-            ("False", 1, None, "test"),
+            (True, 2, "test/dev", ".output"),
+            (True, None, None, "/"),
+            (False, 1, None, "test"),
         ],
     )
     def test_clone_repo_default(self, submodules, depth, branch, cwd):
@@ -161,9 +161,9 @@ class Tests_AzApi_repos:
     @pytest.mark.parametrize(
         "submodules, depth, branch, cwd",
         [
-            ("True", 2, "test/dev", ".output"),
-            ("True", None, None, "/"),
-            ("False", 1, None, "test"),
+            (True, 2, "test/dev", ".output"),
+            (True, None, None, "/"),
+            (False, 1, None, "test"),
         ],
     )
     def test_clone_repo_custom_url(self, submodules, depth, branch, cwd):
@@ -190,7 +190,7 @@ class Tests_AzApi_repos:
                 f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
 
-    def test_add_pr_reviever(self):
+    def test_add_pr_reviewer(self):
         with (
             patch.object(self.api, "search_user_aad_descriptor_by_email") as mock_search,
             patch.object(self.api, "get_guid_by_descriptor") as mock_get_guid,

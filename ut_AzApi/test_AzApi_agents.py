@@ -1,0 +1,139 @@
+import json
+
+import pytest
+from unittest.mock import patch, MagicMock
+
+
+from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_agents import _AzAgents, AgentsBy
+
+
+from ut_AzApi.testdata import (
+    get_pools_list_mock,
+    get_agents_list_mock,
+    get_agent_capabilities_mock,
+)
+
+
+# logger.configure(handlers={})
+
+
+@pytest.fixture
+def api_mock():
+    with (
+        patch("requests.get") as mock_get,
+        patch("requests.post") as mock_post,
+        patch("requests.put") as mock_put,
+        patch("requests.patch") as mock_patch,
+    ):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {}
+
+        mock_get.return_value = mock_response
+        mock_post.return_value = mock_response
+        mock_put.return_value = mock_response
+        mock_patch.return_value = mock_response
+
+        yield {"get": mock_get, "post": mock_post, "response": mock_response, "put": mock_put, "patch": mock_patch}
+
+
+def test_AzApi_agents_init_posittvie(api_mock):
+    with (
+        patch.object(_AzAgents, "_AzAgents__get_all_pools") as mock_get_all_pools,
+        patch.object(_AzAgents, "_AzAgents__get_all_agents") as mock_get_all_agents,
+    ):
+        mock_get_all_pools.return_value = {"Project_pool": 10}
+        mock_get_all_agents.return_value = {"Asus": {"id": 9, "pc_name": "ASUS-MR"}}
+        api = AzApi("Org", "Pro", "123")
+        assert api.agent_pool_name is Ellipsis
+        with pytest.raises(AzApi.ComponentException):
+            _ = api.Agents
+        api.agent_pool_name = "Project_pool"
+        assert api.agent_pool_name == "Project_pool"
+        assert isinstance(api.Agents, _AzAgents)
+
+
+@pytest.mark.parametrize("pool_name", [None, "", 123])
+def test_AzApi_agents_init_negative(pool_name):
+    api = AzApi("Org", "Pro", "123")
+    with pytest.raises(AttributeError):
+        api.agent_pool_name = pool_name
+    assert api.agent_pool_name is Ellipsis
+    with pytest.raises(AzApi.ComponentException):
+        _ = api.Agents
+
+
+class Tests_AzApi_agents:
+    @pytest.fixture(autouse=True)
+    def setup(self, api_mock):
+        with (
+            patch.object(_AzAgents, "_AzAgents__get_all_pools") as mock_get_all_pools,
+            patch.object(_AzAgents, "_AzAgents__get_all_agents") as mock_get_all_agents,
+        ):
+            mock_get_all_pools.return_value = {"Project_pool": 10}
+            mock_get_all_agents.return_value = {
+                "Asus": {"id": 9, "pc_name": "ASUS-MR", "capabilities": {"userCapabilities": {"existingflag1": "true"}}}
+            }
+            self.api_mock = api_mock
+            self.api = AzApi("Org", "Pro", "123")
+            self.api.agent_pool_name = "Project_pool"
+
+    def test_all_agents_getter(self):
+        assert self.api.Agents.all_agents == {
+            "Asus": {"capabilities": {"userCapabilities": {"existingflag1": "true"}}, "id": 9, "pc_name": "ASUS-MR"}
+        }
+
+    def test_get_all_pools(self):
+        with patch.object(_AzAgents, "_AzAgents__get_all_agents") as mock_get_all_agents:
+            mock_get_all_agents.return_value = {"AgentName": {"id": 4}}
+            self.api_mock["get"].return_value = get_pools_list_mock
+            api = AzApi("Org", "Pro", "123")
+            api.agent_pool_name = "Project_pool"
+            pools = api.Agents._AzAgents__get_all_pools()
+            assert pools.get("Project_pool") == 10
+
+    def test__get_all_agents(self):
+        with (
+            patch.object(_AzAgents, "_AzAgents__get_all_pools") as mock_get_all_pools,
+            patch.object(_AzAgents, "get_agent_capabilities") as mock_capabilities,
+        ):
+            mock_capabilities.return_value = {
+                "userCapabilities": {"hardware_available": "true"},
+                "systemCapabilities": {
+                    "Agent.Version": "4.255.0",
+                },
+            }
+            mock_get_all_pools.return_value = {"Project_pool": 10}
+            self.api_mock["get"].return_value = get_agents_list_mock
+            api = AzApi("Org", "Pro", "123")
+            api.agent_pool_name = "Project_pool"
+            agents = api.Agents._AzAgents__get_all_agents(10)
+            assert len(agents) == 1
+            assert agents.get("Asus")
+            print(agents["Asus"])
+            assert agents["Asus"].get("id")
+            assert agents["Asus"].get("capabilities")
+            assert agents["Asus"].get("status")
+
+    @pytest.mark.parametrize("key,by", [(9, AgentsBy.ID), ("Asus", AgentsBy.Agent_Name), ("ASUS-MR", AgentsBy.PC_Name)])
+    def test__resolve_agent_key(self, key, by):
+        assert self.api.Agents._AzAgents__resolve_agent_key(key, by) == 9
+
+    @pytest.mark.parametrize("key,by", [(9, AgentsBy.ID), ("Asus", AgentsBy.Agent_Name), ("ASUS-MR", AgentsBy.PC_Name)])
+    def test_get_agent_capabilities(self, key, by):
+        self.api_mock["get"].return_value = get_agent_capabilities_mock
+        agent = self.api.Agents.get_agent_capabilities(key, by)
+        assert agent["systemCapabilities"].get("Agent.Name") == "Asus"
+        assert agent["systemCapabilities"].get("Agent.ComputerName") == "ASUS-MR"
+        assert agent["userCapabilities"].get("testflag") == "2"
+
+    def test_add_user_capabilities(self):
+        self.api_mock["get"].return_value = get_agent_capabilities_mock
+        self.api.Agents.add_user_capabilities(9, AgentsBy.ID, {"testflag": "testval"})
+        self.api_mock["put"].assert_called_once()
+        args, kwargs = self.api_mock["put"].call_args
+        data = kwargs.get("data")
+        data = json.loads(data)
+        assert data.get("existingflag1") == "true"
+        assert data.get("testflag") == "testval"

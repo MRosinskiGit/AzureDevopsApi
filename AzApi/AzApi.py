@@ -124,7 +124,7 @@ class AzApi:
         Raises:
             AttributeError: If `pool_name` is not a string object or is empty string.
         """
-        if not isinstance(pool_name, str) or not pool_name.strip():
+        if not isinstance(pool_name, str) or pool_name == "":
             logger.error(f"{pool_name} is not a valid pool name.")
             raise AttributeError("Invalid pool name: must be a non-empty string.")
         self.__pool_name = pool_name

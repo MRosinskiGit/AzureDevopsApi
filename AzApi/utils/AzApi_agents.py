@@ -1,7 +1,7 @@
 import json
 from enum import auto, Enum
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Union
 
 from loguru import logger
 
@@ -13,9 +13,9 @@ import requests
 def _require_valid_pool_name(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        repo_name = getattr(self, "_AzRepos__repo_name", None)
-        if not isinstance(repo_name, str) or not repo_name.strip():
-            raise AttributeError("Invalid repository name: must be a non-empty string.")
+        pool_name = getattr(self, "_AzAgents__pool_name", None)
+        if not isinstance(pool_name, str) or pool_name == "":
+            raise AttributeError("Invalid pool name: must be a non-empty string.")
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -127,7 +127,7 @@ class _AzAgents:
         logger.success("Agents list updated.")
         return result
 
-    def __resolve_agent_key(self, key: Any[str, int], by: AgentsBy) -> int:
+    def __resolve_agent_key(self, key: Union[str, int], by: AgentsBy) -> int:
         """
         As Azure Devops always uses unique Agent's ID it translates agents name or PC name to Unique ID based on
         database of agents.
@@ -162,7 +162,7 @@ class _AzAgents:
                 raise AttributeError(f"{by} is not recognised AgentsBy object.")
 
     @_require_valid_pool_name
-    def get_agent_capabilities(self, key: Any[str, int], by: AgentsBy) -> dict:
+    def get_agent_capabilities(self, key: Union[str, int], by: AgentsBy) -> dict:
         """
         Requests Azure Api to get Agent's User and System Capabilities.
         Args:
@@ -185,7 +185,6 @@ class _AzAgents:
         key = self.__resolve_agent_key(key, by)
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}?includeCapabilities=true&api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
-
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
@@ -198,7 +197,7 @@ class _AzAgents:
         }
 
     @_require_valid_pool_name
-    def add_user_capabilities(self, key: Any[str, int], by: AgentsBy, capabilities: Dict[str, str]) -> None:
+    def add_user_capabilities(self, key: Union[str, int], by: AgentsBy, capabilities: Dict[str, str]) -> None:
         """
         Adds new user capabiblity to Agent's Settings.
         Args:
