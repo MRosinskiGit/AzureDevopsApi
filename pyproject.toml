@@ -4,3 +4,16 @@ exclude = [
 ]
 line-length = 120
 indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = []
+
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"

@@ -1,7 +1,7 @@
 import json
 from enum import auto, Enum
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Union
 
 from loguru import logger
 
@@ -13,9 +13,9 @@ import requests
 def _require_valid_pool_name(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        repo_name = getattr(self, "_AzRepos__repo_name", None)
-        if not isinstance(repo_name, str) or not repo_name.strip():
-            raise AttributeError("Invalid repository name: must be a non-empty string.")
+        pool_name = getattr(self, "_AzAgents__pool_name", None)
+        if not isinstance(pool_name, str) or pool_name == "":
+            raise AttributeError("Invalid pool name: must be a non-empty string.")
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -28,7 +28,13 @@ class AgentsBy(Enum):
 
 
 class _AzAgents:
-    def __init__(self, api: "AzApi", pool_name):  # noqa: F821
+    def __init__(self, api: "AzApi", pool_name: str):  # noqa: F821
+        """
+        Constructor for Agents Pool control component.
+        Args:
+            api: Object of AzApi parent.
+            pool_name: name of agents pool in Azure Devops portal.
+        """
         logger.info("Initializing AzApi Agents Tool.")
         self.__pool_name = pool_name
         self.__azure_api = api
@@ -42,10 +48,33 @@ class _AzAgents:
         logger.success("Agents Component initialized.")
 
     @property
-    def all_agents(self):
+    def all_agents(self) -> Dict[str, dict]:
+        """
+        Getter for all available agents in the pool.
+        Returns:
+            dict: dict with agents names and properites
+        Examples:
+            >>> api = AzApi('org','pro','pat')
+            >>> api.agent_pool_name = "pool"
+            >>> api.Agents.all_agents
+                {"Agents_Name": {
+                "id": 4,
+                "pc_name": "LAB_BENCH_5521,
+                "capabilities": {
+                    "userCapabilities":{"hardware_available":true}
+                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...},
+                    },
+                "status": "online",
+            },}
+        """
         return self.__all_agents
 
-    def __get_all_pools(self):
+    def __get_all_pools(self) -> Dict[str, int]:
+        """
+        Private method to download all available agents pools in the organization.
+        Returns:
+        dict: dict with name of pool as a key, and ID of pool as value.
+        """
         logger.debug("Downloading list of all available pools...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools?api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
@@ -59,7 +88,23 @@ class _AzAgents:
         logger.success("Pools list updated.")
         return {pool.get("name"): pool.get("id") for pool in response_json}
 
-    def __get_all_agents(self, pool_id):
+    def __get_all_agents(self, pool_id: int) -> Dict[str, dict]:
+        """
+        Private method to download all available agents in the specific pool.
+        Returns:
+            dict: dict with agents names and properites
+        Examples:
+            >>> self.__get_all_agents()
+                {"Agents_Name": {
+                "id": 4,
+                "pc_name": "LAB_BENCH_5521,
+                "capabilities": {
+                    "userCapabilities":{"hardware_available":true}
+                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...}
+                    },
+                "status": "online",
+            },}
+        """
         logger.debug("Downloading list of all available agents...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{pool_id}/agents?api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
@@ -82,30 +127,64 @@ class _AzAgents:
         logger.success("Agents list updated.")
         return result
 
-    def __resolve_agent_key(self, key, by: AgentsBy):
-        if by == AgentsBy.ID:
-            return key
-        elif by == AgentsBy.Agent_Name:
-            _ = key
-            key = self.__all_agents[key]["id"]
-            logger.trace(f"Swapping {_} to {key}")
-            return key
-        elif by == AgentsBy.PC_Name:
-            for agent, agent_data in self.__all_agents.items():
-                if agent_data.get("pc_name") == key:
-                    _ = key
-                    key = agent_data.get("id")
-                    logger.trace(f"Swapping {_} to {key}")
-                    return key
-                raise KeyError(f"{key} not found in all agents list.")
+    def __resolve_agent_key(self, key: Union[str, int], by: AgentsBy) -> int:
+        """
+        As Azure Devops always uses unique Agent's ID it translates agents name or PC name to Unique ID based on
+        database of agents.
+        Args:
+            key (str or int): key to search Agent. It can be ID, PC name or Agent's Name.
+            by (AgentsBy): Type of key data.
+
+        Returns:
+            int: unique Agent's ID in the pool.
+
+        Raises:
+            KeyError: When key was not found in agent's database.
+            AttributeError: When `by` is not recognised as AgentsBy object.
+        """
+        match by:
+            case AgentsBy.ID:
+                return key
+            case AgentsBy.Agent_Name:
+                _ = key
+                key = self.__all_agents[key]["id"]
+                logger.trace(f"Swapping {_} to {key}")
+                return key
+            case AgentsBy.PC_Name:
+                for _, agent_data in self.__all_agents.items():
+                    if agent_data.get("pc_name") == key:
+                        _ = key
+                        key = agent_data.get("id")
+                        logger.trace(f"Swapping {_} to {key}")
+                        return key
+                    raise KeyError(f"{key} not found in all agents list.")
+            case _:
+                raise AttributeError(f"{by} is not recognised AgentsBy object.")
 
     @_require_valid_pool_name
-    def get_agent_capabilities(self, key, by: AgentsBy) -> dict:
+    def get_agent_capabilities(self, key: Union[str, int], by: AgentsBy) -> dict:
+        """
+        Requests Azure Api to get Agent's User and System Capabilities.
+        Args:
+            key (str or int): key to search Agent. It can be ID, PC name or Agent's Name.
+            by (AgentsBy): Type of key data.
+
+        Returns:
+            dict: dict with user and system capabilities
+
+        Examples:
+            >>> api = AzApi('org','pro','pat')
+            >>> api.agent_pool_name = "pool"
+            >>> capabilities = api.Agents.get_agent_capabilities("BENCH_LAB_1234", AgentsBy.PC_Name)
+            >>> capabilities
+            {"userCapabilities":{"hardware_available":true}
+             "systemCapabilities":{...,"Agent.Version":"4.255.0",...}
+             }
+        """
         logger.info(f"Reading capabilities for agent: {key}...")
         key = self.__resolve_agent_key(key, by)
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}?includeCapabilities=true&api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
-
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
@@ -118,7 +197,19 @@ class _AzAgents:
         }
 
     @_require_valid_pool_name
-    def add_user_capabilities(self, key, by, capabilities: dict):
+    def add_user_capabilities(self, key: Union[str, int], by: AgentsBy, capabilities: Dict[str, str]) -> None:
+        """
+        Adds new user capabiblity to Agent's Settings.
+        Args:
+            key (str or int): key to search Agent. It can be ID, PC name or Agent's Name.
+            by (AgentsBy): Type of key data.
+            capabilities (dict): dict with key as name of capabilitiy and value as value
+
+        Examples:
+            >>> api = AzApi('org','pro','pat')
+            >>> api.agent_pool_name = "pool"
+            >>> capabilities = api.Agents.add_user_capabilities(2, AgentsBy.ID, {"hardware_ready":"true"})
+        """
         logger.info(f"Adding capability: {capabilities} for agent: {key}...")
         key = self.__resolve_agent_key(key, by)
         agent_name, agent_data = None, None

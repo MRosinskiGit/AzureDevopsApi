@@ -17,7 +17,7 @@ def _require_valid_repo_name(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         repo_name = getattr(self, "_AzRepos__repo_name", None)
-        if not isinstance(repo_name, str) or not repo_name.strip():
+        if not isinstance(repo_name, str) or repo_name == "":
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         return method(self, *args, **kwargs)
 
@@ -92,7 +92,7 @@ class _AzRepos:
         Examples:
             >>> pr_id1 = api.Repos.create_pr("Test PullRequest1", "TestBranch", "main", "Testing API Request.")
             >>> pr_id2 = api.Repos.create_pr("Test PullRequest2", "refs/heads/branch2", "refs/heads/main", "Testing API Request.")
-        """
+        """  # noqa: E501
         logger.info(f"Creating new PR: {pr_title}")
         if "refs/head" not in source_branch:
             source_branch = "refs/heads/" + source_branch
@@ -191,10 +191,8 @@ class _AzRepos:
         logger.info(f"Cloning repository {repo_log_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
-        if not custom_url:
-            git_url = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"
-
-        command += f"{custom_url if custom_url else git_url} "
+        git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
+        command += f"{custom_url if custom_url else git_url_std} "
         if submodules:
             command += "--recurse-submodules --shallow-submodules "
         if branch:

@@ -83,7 +83,7 @@ class AzApi:
         Raises:
             AttributeError: If `name` is not a string object or is empty string.
         """
-        if not isinstance(name, str) or not name.strip():
+        if not isinstance(name, str) or name == "":
             logger.error(f"{name} is not a valid repository name.")
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         self.__repo_name = name
@@ -124,7 +124,7 @@ class AzApi:
         Raises:
             AttributeError: If `pool_name` is not a string object or is empty string.
         """
-        if not isinstance(pool_name, str) or not pool_name.strip():
+        if not isinstance(pool_name, str) or pool_name == "":
             logger.error(f"{pool_name} is not a valid pool name.")
             raise AttributeError("Invalid pool name: must be a non-empty string.")
         self.__pool_name = pool_name
@@ -167,7 +167,7 @@ class AzApi:
             >>> self.__get_list_of_all_org_users()
             {"user1@gmail.com": {... "principalName":"user1@gmail.com","mailAddress":"user1@gmail.com","origin":"msa","originId":"00034001089CAF73" ...},
             {"user2@gmail.com": {... "principalName":"user2@gmail.com","mailAddress":"user2@gmail.com","origin":"msa","originId":"00034001089CAF74" ...}}
-        """
+        """  # noqa: E501
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != 200:

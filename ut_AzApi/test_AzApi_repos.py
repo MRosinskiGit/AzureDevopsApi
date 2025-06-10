@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from loguru import logger
 
 from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_repos import _AzRepos
 
 from ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
@@ -24,11 +25,11 @@ def api_mock():
         yield {"get": mock_get, "post": mock_post, "response": mock_response, "put": mock_put}
 
 
-def test_AzApi_repo_init_posivie():
+def test_AzApi_repo_init_positivie():
     api = AzApi("Org", "Pro", "123")
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
-        api.Repos
+        _ = api.Repos
     api.repository_name = "Repos2"
     assert api.repository_name == "Repos2"
     assert api.Repos is not Ellipsis
@@ -41,7 +42,7 @@ def test_AzApi_repo_init_negative(repo_name):
         api.repository_name = repo_name
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
-        api.Repos
+        _ = api.Repos
 
 
 class Tests_AzApi_repos:
@@ -105,7 +106,6 @@ class Tests_AzApi_repos:
             pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
         assert pr_number == 1
 
-    @pytest.mark.skip
     @pytest.mark.parametrize(
         "method, params",
         [
@@ -117,6 +117,7 @@ class Tests_AzApi_repos:
     )
     def test_repo_name_validation_decorator(self, method, params):
         new_api = AzApi("Org", "Pro", "123")
+        new_api._AzApi__Repos = _AzRepos(new_api, "")
         with pytest.raises(AttributeError):
             fun = getattr(new_api.Repos, method)
             if params:
@@ -130,9 +131,9 @@ class Tests_AzApi_repos:
     @pytest.mark.parametrize(
         "submodules, depth, branch, cwd",
         [
-            ("True", 2, "test/dev", ".output"),
-            ("True", None, None, "/"),
-            ("False", 1, None, "test"),
+            (True, 2, "test/dev", ".output"),
+            (True, None, None, "/"),
+            (False, 1, None, "test"),
         ],
     )
     def test_clone_repo_default(self, submodules, depth, branch, cwd):
@@ -151,16 +152,18 @@ class Tests_AzApi_repos:
 
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
+            cmd_submodules = "--recurse-submodules --shallow-submodules "
             assert args[0] == (
-                f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {'--recurse-submodules --shallow-submodules ' if submodules else ''}{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
+                f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {cmd_submodules if submodules else ''}"
+                f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
 
     @pytest.mark.parametrize(
         "submodules, depth, branch, cwd",
         [
-            ("True", 2, "test/dev", ".output"),
-            ("True", None, None, "/"),
-            ("False", 1, None, "test"),
+            (True, 2, "test/dev", ".output"),
+            (True, None, None, "/"),
+            (False, 1, None, "test"),
         ],
     )
     def test_clone_repo_custom_url(self, submodules, depth, branch, cwd):
@@ -181,11 +184,13 @@ class Tests_AzApi_repos:
 
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
+            cmd_submodules = "--recurse-submodules --shallow-submodules "
             assert args[0] == (
-                f"git clone https://gitrepolink.git {'--recurse-submodules --shallow-submodules ' if submodules else ''}{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
+                f"git clone https://gitrepolink.git {cmd_submodules if submodules else ''}"
+                f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
 
-    def test_add_pr_reviever(self):
+    def test_add_pr_reviewer(self):
         with (
             patch.object(self.api, "search_user_aad_descriptor_by_email") as mock_search,
             patch.object(self.api, "get_guid_by_descriptor") as mock_get_guid,
