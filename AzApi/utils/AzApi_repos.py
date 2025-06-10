@@ -2,12 +2,12 @@ import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Union, Optional, Dict
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
-import requests
 from loguru import logger
+from requests.exceptions import RequestException
 
-from typing import TYPE_CHECKING
+from .http_client import requests
 
 if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
@@ -56,7 +56,7 @@ class _AzRepos:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Response received.")
 
         response_json = response.json()
@@ -116,7 +116,7 @@ class _AzRepos:
         if response.status_code != 201:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
         pr_id = response.json()["pullRequestId"]
         logger.success(f"Response received. PR numer: {pr_id}")
@@ -145,7 +145,7 @@ class _AzRepos:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Response received.")
         for index, branch in enumerate(response.json()["value"], 1):
             logger.debug(f"\t\t{index}:\t {branch['name']}")
@@ -255,5 +255,5 @@ class _AzRepos:
         if response.status_code not in [200, 201]:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success(f"Response: {response.status_code}, User added as reviewer.")

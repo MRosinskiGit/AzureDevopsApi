@@ -1,13 +1,14 @@
 import json
-from enum import auto, Enum
+from enum import Enum, auto
 from functools import wraps
 from typing import TYPE_CHECKING, Dict, Union
 
 from loguru import logger
+from requests.exceptions import RequestException
 
 if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
-import requests
+from .http_client import requests
 
 
 def _require_valid_pool_name(method):
@@ -82,7 +83,7 @@ class _AzAgents:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.debug(f"Found {response.json()['count']} pools.")
         response_json = response.json()["value"]
         logger.success("Pools list updated.")
@@ -112,7 +113,7 @@ class _AzAgents:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.debug(f"Found {response.json()['count']} agents.")
         response_json = response.json()["value"]
         result = {}
@@ -188,7 +189,7 @@ class _AzAgents:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
         response_json = response.json()
         return {
@@ -238,6 +239,6 @@ class _AzAgents:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Capabilities modified.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities

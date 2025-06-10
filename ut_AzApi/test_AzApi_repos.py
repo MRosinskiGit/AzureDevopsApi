@@ -1,11 +1,10 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_repos import _AzRepos
-
 from ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
 logger.configure(handlers={})
@@ -13,16 +12,35 @@ logger.configure(handlers={})
 
 @pytest.fixture
 def api_mock():
-    with patch("requests.get") as mock_get, patch("requests.post") as mock_post, patch("requests.put") as mock_put:
+    module_path = "AzApi.utils.http_client.requests"
+
+    with (
+        patch(f"{module_path}.get") as mock_get,
+        patch(f"{module_path}.post") as mock_post,
+        patch(f"{module_path}.put") as mock_put,
+        patch(f"{module_path}.patch") as mock_patch,
+    ):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {}
 
+        mock_response_put = MagicMock()
+        mock_response_put.status_code = 201
+        mock_response_put.json.return_value = {}
+
         mock_get.return_value = mock_response
         mock_post.return_value = mock_response
-        mock_put.return_value = mock_response
+        mock_put.return_value = mock_response_put
+        mock_patch.return_value = mock_response
 
-        yield {"get": mock_get, "post": mock_post, "response": mock_response, "put": mock_put}
+        yield {
+            "get": mock_get,
+            "post": mock_post,
+            "put": mock_put,
+            "patch": mock_patch,
+            "response": mock_response,
+            "response_put": mock_response_put,
+        }
 
 
 def test_AzApi_repo_init_positivie():
@@ -67,43 +85,38 @@ class Tests_AzApi_repos:
         assert self.api.Repos is old_repo_instance
 
     def test_get_active_pull_requests_raw(self):
-        with patch("requests.get") as mock_get:
-            mock_get.return_value = get_active_prs_mock
-            active_prs = self.api.Repos.get_active_pull_requests(raw=True)
+        self.api_mock["get"].return_value = get_active_prs_mock
+        active_prs = self.api.Repos.get_active_pull_requests(raw=True)
         assert active_prs[0]["pullRequestId"] == 1
         assert active_prs[0]["sourceRefName"] == "refs/heads/test2"
         assert active_prs[0]["targetRefName"] == "refs/heads/main"
 
     def test_get_active_pull_requests(self):
-        with patch("requests.get") as mock_get:
-            mock_get.return_value = get_active_prs_mock
-            active_prs = self.api.Repos.get_active_pull_requests(raw=False)
+        self.api_mock["get"].return_value = get_active_prs_mock
+        active_prs = self.api.Repos.get_active_pull_requests(raw=False)
         assert 1 in active_prs.keys()
         assert active_prs[1]["sourceRefName"] == "refs/heads/test2"
         assert active_prs[1]["targetRefName"] == "refs/heads/main"
 
     def test_get_all_branches_raw(self):
-        with patch("requests.get") as mock_get:
-            mock_get.return_value = branch_list_response_mock
-            branches = self.api.Repos.get_all_branches(raw=True)
+        self.api_mock["get"].return_value = branch_list_response_mock
+        branches = self.api.Repos.get_all_branches(raw=True)
         assert len(branches) == 3
         assert branches[0]["name"] == "refs/heads/main"
         assert branches[1]["name"] == "refs/heads/test1"
         assert branches[2]["name"] == "refs/heads/test2"
 
     def test_get_all_branches(self):
-        with patch("requests.get") as mock_get:
-            mock_get.return_value = branch_list_response_mock
-            branches = self.api.Repos.get_all_branches(raw=False)
+        self.api_mock["get"].return_value = branch_list_response_mock
+        branches = self.api.Repos.get_all_branches(raw=False)
         assert len(branches) == 3
         assert branches["refs/heads/main"]["creator"] == "ciej R"
         assert branches["refs/heads/test1"]["creator"] == "MRosi"
         assert branches["refs/heads/test2"]["creator"] == "MRosi"
 
     def test_create_pr(self):
-        with patch("requests.post") as mock_get:
-            mock_get.return_value = create_pr_response_mock
-            pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
+        self.api_mock["post"].return_value = create_pr_response_mock
+        pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
         assert pr_number == 1
 
     @pytest.mark.parametrize(
