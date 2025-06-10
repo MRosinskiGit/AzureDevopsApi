@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System tests ✘
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘
+- Extended handling of incorrect API responde status code ✘
+- Retries on connection lost response ✘
+- Repos: `Delete branch` and `Abandon PR` methods ✘
 
 ### Changed
 - Modified README description ✘
