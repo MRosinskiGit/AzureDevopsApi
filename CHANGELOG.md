@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added 
-- Boards docs ✘
+- Boards docs ✔
 - Boards ut ✘
-- Agents docs ✘
+- Agents docs ✔
 - Agents ut ✘
 - System tests ✘
 - Preparation for PyPi deploy ✘
+- Boards: Reading objects by SQL ✘
 
 ### Changed
 - Simplified `examples.py` ✔
