@@ -1,36 +1,46 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
-
-
 from ut_AzApi.testdata import create_workitem_mock
-
 
 logger.configure(handlers={})
 
 
 @pytest.fixture
 def api_mock():
+    module_path = "AzApi.utils.http_client.requests"
+
     with (
-        patch("requests.get") as mock_get,
-        patch("requests.post") as mock_post,
-        patch("requests.put") as mock_put,
-        patch("requests.patch") as mock_patch,
+        patch(f"{module_path}.get") as mock_get,
+        patch(f"{module_path}.post") as mock_post,
+        patch(f"{module_path}.put") as mock_put,
+        patch(f"{module_path}.patch") as mock_patch,
     ):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {}
 
+        mock_response_put = MagicMock()
+        mock_response_put.status_code = 201
+        mock_response_put.json.return_value = {}
+
         mock_get.return_value = mock_response
         mock_post.return_value = mock_response
-        mock_put.return_value = mock_response
+        mock_put.return_value = mock_response_put
         mock_patch.return_value = mock_response
 
-        yield {"get": mock_get, "post": mock_post, "response": mock_response, "put": mock_put, "patch": mock_patch}
+        yield {
+            "get": mock_get,
+            "post": mock_post,
+            "put": mock_put,
+            "patch": mock_patch,
+            "response": mock_response,
+            "response_put": mock_response_put,
+        }
 
 
 class Tests_AzApi_boards:

@@ -1,24 +1,28 @@
 import base64
+from unittest.mock import MagicMock, patch
 
 import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
-from unittest.mock import patch, MagicMock
-
 from ut_AzApi.testdata import (
+    get_guid_by_descriptor_mock,
     get_list_of_all_org_users_mock_continuous,
     get_list_of_all_org_users_mock_single_use,
-    get_guid_by_descriptor_mock,
 )
-
 
 logger.configure(handlers={})
 
 
 @pytest.fixture
 def api_mock():
-    with patch("requests.get") as mock_get, patch("requests.post") as mock_post, patch("requests.put") as mock_put:
+    module_path = "AzApi.utils.http_client.requests"
+
+    with (
+        patch(f"{module_path}.get") as mock_get,
+        patch(f"{module_path}.post") as mock_post,
+        patch(f"{module_path}.put") as mock_put,
+    ):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {}
@@ -30,7 +34,14 @@ def api_mock():
         mock_get.return_value = mock_response
         mock_post.return_value = mock_response
         mock_put.return_value = mock_response_put
-        yield {"get": mock_get, "post": mock_post, "put": mock_response_put, "response": mock_response}
+
+        yield {
+            "get": mock_get,
+            "post": mock_post,
+            "put": mock_put,
+            "response": mock_response,
+            "response_put": mock_response_put,
+        }
 
 
 class Tests_AzApi:
@@ -102,23 +113,23 @@ class Tests_AzApi:
         ],
     )
     def test_get_list_of_all_org_users(self, response_mock):
-        with patch("requests.get", side_effect=response_mock):
-            self.api._AzApi__get_list_of_all_org_users()
+        self.api_mock["get"].side_effect = response_mock
+        self.api._AzApi__get_list_of_all_org_users()
 
     def test_search_user_aad_descriptor_by_email_negative(self):
-        with patch("requests.get", return_value=get_list_of_all_org_users_mock_single_use):
-            assert self.api.search_user_aad_descriptor_by_email("test@gmail.com") is None
+        self.api_mock["get"].return_value = get_list_of_all_org_users_mock_single_use
+        assert self.api.search_user_aad_descriptor_by_email("test@gmail.com") is None
 
     def test_search_user_aad_descriptor_by_email_positive(self):
-        with patch("requests.get", return_value=get_list_of_all_org_users_mock_single_use):
-            assert (
-                self.api.search_user_aad_descriptor_by_email("m.rosi97@gil.com")
-                == "msa.NmRhOTcyZDUtZTVkNy03N2JiLWE2YWQtMTE3NWFhMmQ5YTk2"
-            )
+        self.api_mock["get"].return_value = get_list_of_all_org_users_mock_single_use
+        assert (
+            self.api.search_user_aad_descriptor_by_email("m.rosi97@gil.com")
+            == "msa.NmRhOTcyZDUtZTVkNy03N2JiLWE2YWQtMTE3NWFhMmQ5YTk2"
+        )
 
     def test_get_guid_by_descriptor_positive(self):
-        with patch("requests.get", return_value=get_guid_by_descriptor_mock):
-            assert (
-                self.api.get_guid_by_descriptor("msa.NmRhOTcyZDUtZTVkNy03N2JiLWE2YWQtMTE3NWFhMmQ5YTk2")
-                == "6da972d5-e5d7-67bb-a6ad-1175aa2d9a96"
-            )
+        self.api_mock["get"].return_value = get_guid_by_descriptor_mock
+        assert (
+            self.api.get_guid_by_descriptor("msa.NmRhOTcyZDUtZTVkNy03N2JiLWE2YWQtMTE3NWFhMmQ5YTk2")
+            == "6da972d5-e5d7-67bb-a6ad-1175aa2d9a96"
+        )

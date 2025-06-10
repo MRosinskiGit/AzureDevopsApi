@@ -6,7 +6,7 @@ line-length = 120
 indent-width = 4
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "B"]
+select = ["E", "F", "W", "B", "I"]
 ignore = []
 
 fixable = ["ALL"]

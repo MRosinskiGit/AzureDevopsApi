@@ -1,9 +1,10 @@
 import json
-
-import requests
-from loguru import logger
-
 from typing import TYPE_CHECKING, Optional
+
+from loguru import logger
+from requests.exceptions import RequestException
+
+from .http_client import requests
 
 if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
@@ -73,7 +74,7 @@ class _AzBoards:
         if response.status_code != 200:
             logger.error(f"Failed to create work item. Status code: {response.status_code}")
             logger.debug(response.text)
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
         logger.success("Work item created successfully.")
         logger.debug(response.json())
@@ -100,5 +101,5 @@ class _AzBoards:
         if response.status_code != 200:
             logger.error(f"Error: {response.status_code}")
             logger.debug(response.json())
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success(f"State of object changed to {state}.")

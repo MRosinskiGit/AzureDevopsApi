@@ -1,12 +1,13 @@
 import base64
-from typing import Union, Dict
+from typing import Dict, Union
 
-import requests
 from loguru import logger
+from requests.exceptions import RequestException
 
 from .utils.AzApi_agents import _AzAgents
 from .utils.AzApi_boards import _AzBoards
 from .utils.AzApi_repos import _AzRepos
+from .utils.http_client import requests
 
 
 class AzApi:
@@ -173,7 +174,7 @@ class AzApi:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         all_data_dict = {}
         for user in response.json()["value"]:
             if user.get("mailAddress"):
@@ -188,7 +189,7 @@ class AzApi:
             if response.status_code != 200:
                 logger.error(f"Connection error: {response.status_code}")
                 logger.debug(f"Error message: {response.text}")
-                raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+                raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
             for user in response.json()["value"]:
                 if user.get("mailAddress"):
@@ -230,7 +231,7 @@ class AzApi:
         Returns:
             str: User's GUID
         Raises:
-            requests.RequestException: When API Request was not successful.
+            RequestException: When API Request was not successful.
         """
         logger.info(f"Reading GUID for descriptor {descriptor}")
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
@@ -238,7 +239,7 @@ class AzApi:
         if response.status_code != 200:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
-            raise requests.RequestException(f"Response Error. Status Code: {response.status_code}.")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         response = response.json()
         guid = response.get("value")
         logger.success(f"GUID found: {guid}")
