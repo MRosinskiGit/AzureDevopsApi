@@ -5,23 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-### Added 
-- Boards docs ✔
-- Boards ut ✔
-- Agents docs ✔
-- Agents ut ✔
+### Added
 - System tests ✘
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘
 
 ### Changed
-- Simplified `examples.py` ✔
-- Split for prod dependencies and dev ones. ✔
 - Modified README description ✘
 
-### Removed
-- .env template, not needed and user knows the best how he wants to use AzApi ✔
 
+## [1.2.1] - 10.06.2025
+### Added 
+- Boards docs 
+- Boards ut 
+- Agents docs 
+- Agents ut 
+
+### Changed
+- Simplified `examples.py` 
+- Split for prod dependencies and dev ones. 
+
+### Removed
+- .env template, not needed and user knows the best how he wants to use AzApi 
 
 ## [1.2.0] - 9.06.2025
 ### Added
