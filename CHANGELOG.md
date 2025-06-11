@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Agents: `remove_user_capabilities` method ✔
-- System tests ✘ - Ongoing
+- Repos: `delete_branch` method ✔
+- Repos: `change_pr_status` method ✘
+- Boards: `get_work_items` method ✘
+- System tests ✘ - Ongoing, Base - 100%, Agents - 100%, Repos - 70%, Boards - 0%
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘
 - Extended handling of incorrect API response status code ✘
-- Repos: `Delete branch` and `Abandon PR` methods ✘
+
 
 ## [1.2.2] - 10.06.2025
 ### Changed
