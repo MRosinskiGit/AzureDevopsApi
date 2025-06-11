@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- System tests ✘
+- Agents: `remove_user_capabilities` method ✔
+- System tests ✘ - Ongoing
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘
 - Extended handling of incorrect API response status code ✘
