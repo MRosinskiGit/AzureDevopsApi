@@ -175,7 +175,7 @@ class _AzRepos:
         depth: Optional[int] = None,
         branch: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> str | None:
         """
         Downloads repository to defined output directory.
         Args:
@@ -185,6 +185,10 @@ class _AzRepos:
             branch (Optional[str]): name of branch to download if different from default
             **kwargs:
                 custom_url (Optional[str]): link to different repository then defined in parent AzApi class.
+        Returns:
+            str: Path to repository dir.
+            or
+            None: When directory to cloned repo was not found in output.
         """
         custom_url = kwargs.get("custom_url")
         repo_log_name = custom_url if custom_url is not None else self.__repo_name
@@ -192,7 +196,8 @@ class _AzRepos:
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
         git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
-        command += f"{custom_url if custom_url else git_url_std} "
+        repo_url = custom_url if custom_url else git_url_std
+        command += f"{repo_url} "
         if submodules:
             command += "--recurse-submodules --shallow-submodules "
         if branch:
@@ -219,7 +224,7 @@ class _AzRepos:
         with ThreadPoolExecutor(max_workers=2) as executor:
             executor.submit(__thread_pool_stream_reader, proc.stdout, logger.info)
             logger.debug("Reading stdout initialized...")
-            executor.submit(__thread_pool_stream_reader, proc.stderr, logger.trace)
+            executor.submit(__thread_pool_stream_reader, proc.stderr, logger.debug)
             logger.debug("Reading stderr initialized...")
 
         if proc.wait() != 0:
@@ -234,6 +239,16 @@ class _AzRepos:
             logger.warning("Terminate timed out. Killing process.")
             proc.kill()
             proc.wait()
+
+        url_splitted = repo_url.split(sep="/")
+        last_part = url_splitted[-1].lower().replace(".git", "")
+        try:
+            matched_dirs = [directory for directory in os.listdir(output_dir) if directory.lower() == last_part]
+            if matched_dirs:
+                return os.path.join(output_dir, matched_dirs[0])
+        except FileNotFoundError:
+            pass
+        logger.warning("Directory not found.")
 
     @_require_valid_repo_name
     def add_pr_reviewer(self, pr_id: int, email: str):

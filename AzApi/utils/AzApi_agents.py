@@ -41,7 +41,7 @@ class _AzAgents:
         self.__azure_api = api
         self.__all_pools = self.__get_all_pools()
         self.__pool_id = self.__all_pools.get(self.__pool_name)
-        if self.__pool_id is None:
+        if not self.__pool_id:
             logger.error("Pool name not detected in organization.")
             logger.debug(f"{self.__pool_name} not found in {self.__all_pools}.")
             raise NameError("Pool name not detected in organization.")
@@ -100,8 +100,8 @@ class _AzAgents:
                 "id": 4,
                 "pc_name": "LAB_BENCH_5521,
                 "capabilities": {
-                    "userCapabilities":{"hardware_available":true}
-                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...}
+                    "userCapabilities":{"hardware_available":true},
+                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...},
                     },
                 "status": "online",
             },}
@@ -219,7 +219,7 @@ class _AzAgents:
                 agent_name = tmp_agent_name
                 agent_data = tmp_agent_data
                 break
-        if agent_name is None:
+        if not agent_name:
             raise KeyError(f"{key} not found in all agents list.")
 
         new_capabilities = agent_data["capabilities"].get("userCapabilities", {})
