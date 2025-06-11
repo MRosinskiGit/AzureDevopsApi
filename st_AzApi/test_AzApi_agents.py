@@ -21,19 +21,20 @@ POOL = os.getenv("AGENT_POOL")
 AGENT_NAME = os.getenv("AGENT_NAME")
 USER_EMAIL = os.getenv("USER_EMAIL")
 MAIN_BRANCH_NAME = os.getenv("MAIN_BRANCH_NAME")
+TEST_CAPABILITY_NAME = "tmp_systemtest_capability"
 
 
 @pytest.fixture()
 def fixture_remove_created_capability(request):
     self = request.instance
     yield
-    self.api.Agents.remove_user_capabilities(AGENT_NAME, AgentsBy.Agent_Name, "tmp_systemtest_capability")
+    self.api.Agents.remove_user_capabilities(AGENT_NAME, AgentsBy.Agent_Name, TEST_CAPABILITY_NAME)
 
 
 @pytest.fixture()
 def fixture_create_capability(request):
     self = request.instance
-    self.api.Agents.add_user_capabilities(AGENT_NAME, AgentsBy.Agent_Name, {"tmp_systemtest_capability": "valueofvar"})
+    self.api.Agents.add_user_capabilities(AGENT_NAME, AgentsBy.Agent_Name, {TEST_CAPABILITY_NAME: "valueofvar"})
     yield
 
 
@@ -75,9 +76,9 @@ class Test_AzApi_Agents_functions_correct_pat:
                 key = self.api.Agents.all_agents.get(AGENT_NAME).get("pc_name")
             case AgentsBy.ID:
                 key = self.api.Agents.all_agents.get(AGENT_NAME).get("id")
-        self.api.Agents.add_user_capabilities(key, by, {"tmp_systemtest_capability": "valueofvar"})
+        self.api.Agents.add_user_capabilities(key, by, {TEST_CAPABILITY_NAME: "valueofvar"})
         capabilities = self.api.Agents.get_agent_capabilities(key, by)
-        assert capabilities.get("userCapabilities").get("tmp_systemtest_capability") == "valueofvar"
+        assert capabilities.get("userCapabilities").get(TEST_CAPABILITY_NAME) == "valueofvar"
 
     @pytest.mark.skipif(not AGENT_NAME, reason="Agents name not defined.")
     @pytest.mark.parametrize("by", [AgentsBy.Agent_Name, AgentsBy.PC_Name, AgentsBy.ID])
@@ -89,6 +90,6 @@ class Test_AzApi_Agents_functions_correct_pat:
                 key = self.api.Agents.all_agents.get(AGENT_NAME).get("pc_name")
             case AgentsBy.ID:
                 key = self.api.Agents.all_agents.get(AGENT_NAME).get("id")
-        self.api.Agents.remove_user_capabilities(key, by, "tmp_systemtest_capability")
+        self.api.Agents.remove_user_capabilities(key, by, TEST_CAPABILITY_NAME)
         capabilities = self.api.Agents.get_agent_capabilities(key, by)
-        assert not capabilities.get("userCapabilities").get("tmp_systemtest_capability")
+        assert not capabilities.get("userCapabilities").get(TEST_CAPABILITY_NAME)
