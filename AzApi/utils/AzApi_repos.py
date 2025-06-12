@@ -1,7 +1,9 @@
+import json
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from loguru import logger
@@ -101,6 +103,12 @@ class _AzRepos:
             target_branch = "refs/heads/" + target_branch
             logger.trace(f"Adding prefix to target branch name: {target_branch}")
 
+        active_prs = self.get_active_pull_requests()
+        for pr_id, pr_data in active_prs.items():
+            if pr_data.get("sourceRefName") == source_branch and pr_data.get("targetRefName") == target_branch:
+                logger.warning("This pull request already exists.")
+                return pr_id
+
         logger.debug(f"\t\tFrom: {source_branch} to {target_branch}")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
         logger.trace(f"Requesting URL: {url}")
@@ -113,11 +121,10 @@ class _AzRepos:
         }
 
         response = requests.post(url, json=payload, headers=self.__azure_api._headers("application/json"))
-        if response.status_code != 201:
+        if response.status_code != HTTPStatus.CREATED:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-
         pr_id = response.json()["pullRequestId"]
         logger.success(f"Response received. PR numer: {pr_id}")
         return pr_id
@@ -152,7 +159,10 @@ class _AzRepos:
         if raw:
             return response.json()["value"]
         return {
-            branch_iter["name"]: {"creator": branch_iter["creator"]["displayName"]}
+            branch_iter["name"]: {
+                "creator": branch_iter["creator"]["displayName"],
+                "objectId": branch_iter.get("objectId"),
+            }
             for branch_iter in response.json()["value"]
         }
 
@@ -175,7 +185,7 @@ class _AzRepos:
         depth: Optional[int] = None,
         branch: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> str | None:
         """
         Downloads repository to defined output directory.
         Args:
@@ -185,6 +195,10 @@ class _AzRepos:
             branch (Optional[str]): name of branch to download if different from default
             **kwargs:
                 custom_url (Optional[str]): link to different repository then defined in parent AzApi class.
+        Returns:
+            str: Path to repository dir.
+            or
+            None: When directory to cloned repo was not found in output.
         """
         custom_url = kwargs.get("custom_url")
         repo_log_name = custom_url if custom_url is not None else self.__repo_name
@@ -192,7 +206,8 @@ class _AzRepos:
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         command = "git clone "
         git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
-        command += f"{custom_url if custom_url else git_url_std} "
+        repo_url = custom_url if custom_url else git_url_std
+        command += f"{repo_url} "
         if submodules:
             command += "--recurse-submodules --shallow-submodules "
         if branch:
@@ -219,7 +234,7 @@ class _AzRepos:
         with ThreadPoolExecutor(max_workers=2) as executor:
             executor.submit(__thread_pool_stream_reader, proc.stdout, logger.info)
             logger.debug("Reading stdout initialized...")
-            executor.submit(__thread_pool_stream_reader, proc.stderr, logger.trace)
+            executor.submit(__thread_pool_stream_reader, proc.stderr, logger.debug)
             logger.debug("Reading stderr initialized...")
 
         if proc.wait() != 0:
@@ -234,6 +249,16 @@ class _AzRepos:
             logger.warning("Terminate timed out. Killing process.")
             proc.kill()
             proc.wait()
+
+        url_splitted = repo_url.split(sep="/")
+        last_part = url_splitted[-1].lower().replace(".git", "")
+        try:
+            matched_dirs = [directory for directory in os.listdir(output_dir) if directory.lower() == last_part]
+            if matched_dirs:
+                return os.path.join(output_dir, matched_dirs[0])
+        except FileNotFoundError:
+            pass
+        logger.warning("Directory not found.")
 
     @_require_valid_repo_name
     def add_pr_reviewer(self, pr_id: int, email: str):
@@ -257,3 +282,38 @@ class _AzRepos:
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success(f"Response: {response.status_code}, User added as reviewer.")
+
+    @_require_valid_repo_name
+    def delete_branch(self, branch_name: str):
+        """
+        Deletes branch from repository. Accepts naming convention with refs/heads or just branch name.
+        Args:
+            branch_name: string with branch name
+        """
+        logger.info(f"Deleting {branch_name}")
+        url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/refs?api-version=7.2-preview.2"
+        if not branch_name.startswith("refs/heads/"):
+            branch_name = "refs/heads/" + branch_name
+            logger.debug("Adding refs/heads/ to branch name.")
+        all_branches = self.get_all_branches()
+        branch_to_delete = all_branches.get(branch_name)
+        if branch_to_delete is None:
+            msg = f"Branch {branch_name} not found. Available branches: {all_branches.keys()}"
+            logger.error(msg)
+            raise KeyError(msg)
+
+        payload = [
+            {
+                "name": branch_name,
+                "oldObjectId": branch_to_delete.get("objectId"),
+                "newObjectId": "0000000000000000000000000000000000000000",
+            }
+        ]
+        response = requests.post(
+            url=url, headers=self.__azure_api._headers("application/json"), data=json.dumps(payload)
+        )
+        if response.status_code != 200:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success("Branch deleted.")

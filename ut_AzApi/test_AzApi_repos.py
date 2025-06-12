@@ -116,7 +116,9 @@ class Tests_AzApi_repos:
 
     def test_create_pr(self):
         self.api_mock["post"].return_value = create_pr_response_mock
-        pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
+        with patch.object(_AzRepos, "get_active_pull_requests") as mck:
+            mck.return_value = {}
+            pr_number = self.api.Repos.create_pr("Test PR", "test2", "main")
         assert pr_number == 1
 
     @pytest.mark.parametrize(
@@ -221,3 +223,9 @@ class Tests_AzApi_repos:
                 "id": "1234-GUID",
                 "vote": 0,
             }
+
+    @pytest.mark.parametrize("branch_name", ["test1", "refs/heads/test1"])
+    def test_delete_branch(self, branch_name):
+        with patch.object(self.api.Repos, "get_all_branches") as mck:
+            mck.return_value = {"refs/heads/test1": {"objectId": "11111111111111111111111111111111111111"}}
+            self.api.Repos.delete_branch(branch_name)

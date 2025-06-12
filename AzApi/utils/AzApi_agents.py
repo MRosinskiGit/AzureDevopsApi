@@ -41,7 +41,7 @@ class _AzAgents:
         self.__azure_api = api
         self.__all_pools = self.__get_all_pools()
         self.__pool_id = self.__all_pools.get(self.__pool_name)
-        if self.__pool_id is None:
+        if not self.__pool_id:
             logger.error("Pool name not detected in organization.")
             logger.debug(f"{self.__pool_name} not found in {self.__all_pools}.")
             raise NameError("Pool name not detected in organization.")
@@ -100,8 +100,8 @@ class _AzAgents:
                 "id": 4,
                 "pc_name": "LAB_BENCH_5521,
                 "capabilities": {
-                    "userCapabilities":{"hardware_available":true}
-                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...}
+                    "userCapabilities":{"hardware_available":true},
+                    "systemCapabilities":{...,"Agent.Version":"4.255.0",...},
                     },
                 "status": "online",
             },}
@@ -219,17 +219,11 @@ class _AzAgents:
                 agent_name = tmp_agent_name
                 agent_data = tmp_agent_data
                 break
-        if agent_name is None:
+        if not agent_name:
             raise KeyError(f"{key} not found in all agents list.")
 
         new_capabilities = agent_data["capabilities"].get("userCapabilities", {})
         new_capabilities.update(capabilities)
-        # TODO Update API version once clarified
-        # url=f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}?api-version=7.1"
-        # payload = {"userCapabilities":capabilities}
-        # response = requests.patch(            url,
-        #     headers=self.__azure_api._headers("application/json"),
-        #     data=json.dumps(payload))
 
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}/usercapabilities?api-version=5.0"
         response = requests.put(
@@ -241,4 +235,47 @@ class _AzAgents:
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Capabilities modified.")
+        self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities
+
+    @_require_valid_pool_name
+    def remove_user_capabilities(self, key: Union[str, int], by: AgentsBy, capabilities: Union[str, list]) -> None:
+        """
+        Removes capability from user capabiblits to Agent's Settings.
+        Args:
+            key (str or int): key to search Agent. It can be ID, PC name or Agent's Name.
+            by (AgentsBy): Type of key data.
+            capabilities (str or list): names of capabilities to remove.
+
+        Examples:
+            >>> api = AzApi('org','pro','pat')
+            >>> api.agent_pool_name = "pool"
+            >>> capabilities = api.Agents.remove_user_capabilities(2, AgentsBy.ID, ["hardware_ready","agent_busy"]})
+        """
+        logger.info(f"Removing capability: {capabilities} for agent: {key}...")
+        key = self.__resolve_agent_key(key, by)
+        agent_name, agent_data = None, None
+        for tmp_agent_name, tmp_agent_data in self.__all_agents.items():
+            if tmp_agent_data.get("id") == key:
+                agent_name = tmp_agent_name
+                agent_data = tmp_agent_data
+                break
+        if not agent_name:
+            raise KeyError(f"{key} not found in all agents list.")
+
+        new_capabilities = agent_data["capabilities"].get("userCapabilities", {})
+        if isinstance(capabilities, str):
+            capabilities = [capabilities]
+        for capability in capabilities:
+            new_capabilities.pop(capability, None)
+
+        url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}/usercapabilities?api-version=5.0"
+        response = requests.put(
+            url, headers=self.__azure_api._headers("application/json"), data=json.dumps(new_capabilities)
+        )
+
+        if response.status_code != 200:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success("Capabilities removed.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities

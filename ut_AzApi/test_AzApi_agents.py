@@ -82,7 +82,11 @@ class Tests_AzApi_agents:
         ):
             mock_get_all_pools.return_value = {"Project_pool": 10}
             mock_get_all_agents.return_value = {
-                "Asus": {"id": 9, "pc_name": "ASUS-MR", "capabilities": {"userCapabilities": {"existingflag1": "true"}}}
+                "Asus": {
+                    "id": 9,
+                    "pc_name": "ASUS-MR",
+                    "capabilities": {"userCapabilities": {"existingflag1": "true", "existingflag2": "true"}},
+                }
             }
             self.api_mock = api_mock
             self.api = AzApi("Org", "Pro", "123")
@@ -90,7 +94,11 @@ class Tests_AzApi_agents:
 
     def test_all_agents_getter(self):
         assert self.api.Agents.all_agents == {
-            "Asus": {"capabilities": {"userCapabilities": {"existingflag1": "true"}}, "id": 9, "pc_name": "ASUS-MR"}
+            "Asus": {
+                "capabilities": {"userCapabilities": {"existingflag1": "true", "existingflag2": "true"}},
+                "id": 9,
+                "pc_name": "ASUS-MR",
+            }
         }
 
     def test_get_all_pools(self):
@@ -147,3 +155,20 @@ class Tests_AzApi_agents:
         data = json.loads(data)
         assert data.get("existingflag1") == "true"
         assert data.get("testflag") == "testval"
+        assert self.api.Agents._AzAgents__all_agents["Asus"]["capabilities"]["userCapabilities"] == {
+            "existingflag1": "true",
+            "existingflag2": "true",
+            "testflag": "testval",
+        }
+
+    @pytest.mark.parametrize("cap_to_remove", ["existingflag1", ["existingflag1", "existingflag2"]])
+    def test_remove_user_capabilities(self, cap_to_remove):
+        self.api_mock["get"].return_value = get_agent_capabilities_mock
+        self.api_mock["put"].return_value = MagicMock(status_code=200)
+        self.api.Agents.remove_user_capabilities(9, AgentsBy.ID, cap_to_remove)
+        self.api_mock["put"].assert_called_once()
+        if cap_to_remove == "existingflag1":
+            expected = {"existingflag2": "true"}
+        else:
+            expected = {}
+        assert self.api.Agents._AzAgents__all_agents["Asus"]["capabilities"]["userCapabilities"] == expected
