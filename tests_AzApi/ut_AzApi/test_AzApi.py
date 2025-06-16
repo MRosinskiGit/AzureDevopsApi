@@ -5,7 +5,7 @@ import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
-from ut_AzApi.testdata import (
+from tests_AzApi.ut_AzApi.testdata import (
     get_guid_by_descriptor_mock,
     get_list_of_all_org_users_mock_continuous,
     get_list_of_all_org_users_mock_single_use,

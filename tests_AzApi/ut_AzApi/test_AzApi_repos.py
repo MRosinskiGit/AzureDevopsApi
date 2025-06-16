@@ -4,8 +4,8 @@ import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_repos import _AzRepos
-from ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
+from AzApi.utils.AzApi_repos import PrStatusesDef, _AzRepos
+from tests_AzApi.ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
 logger.configure(handlers={})
 
@@ -65,7 +65,7 @@ def test_AzApi_repo_init_negative(repo_name):
 
 class Tests_AzApi_repos:
     @pytest.fixture(autouse=True)
-    def setup(self, api_mock):
+    def setup_method(self, api_mock):
         self.api_mock = api_mock
         self.api = AzApi("Org", "Pro", "123")
         self.api.repository_name = "Repo"
@@ -229,3 +229,10 @@ class Tests_AzApi_repos:
         with patch.object(self.api.Repos, "get_all_branches") as mck:
             mck.return_value = {"refs/heads/test1": {"objectId": "11111111111111111111111111111111111111"}}
             self.api.Repos.delete_branch(branch_name)
+
+    @pytest.mark.parametrize("status", [PrStatusesDef.Abandoned, PrStatusesDef.Completed, PrStatusesDef.Active])
+    def test_change_pr_status(self, status):
+        self.api.Repos.change_pr_status(1, status)
+        self.api_mock["patch"].assert_called_once()
+        args, kwargs = self.api_mock["patch"].call_args
+        assert kwargs.get("json") == {"status": status}

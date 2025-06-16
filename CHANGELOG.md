@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Repos: `change_pr_status` method ✘
+- Repos: `change_pr_status` method ✔
 - Boards: `get_work_items` method ✘
 - System tests ✘ - Ongoing: Repos - 70%, Boards - 0% ✘
 - Preparation for PyPi deploy ✘

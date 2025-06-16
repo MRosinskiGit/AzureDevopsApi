@@ -5,7 +5,7 @@ import pytest
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_agents import AgentsBy, _AzAgents
-from ut_AzApi.testdata import (
+from tests_AzApi.ut_AzApi.testdata import (
     get_agent_capabilities_mock,
     get_agents_list_mock,
     get_pools_list_mock,

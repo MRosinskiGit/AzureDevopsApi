@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_repos import PrStatusesDef
 
 # logger.remove()
 try:
@@ -62,6 +63,11 @@ def fixture_create_and_push_test_branch(fixture_clone_repository, request):
     yield
     self = request.instance
     self.api.Repos.delete_branch(TEST_BRANCH_NAME)
+    prs = self.api.Repos.get_active_pull_requests()
+    for pr_id, pr_data in prs.items():
+        if pr_data.get("sourceRefName") == f"refs/heads/{TEST_BRANCH_NAME}":
+            self.api.Repos.change_pr_status(pr_id, PrStatusesDef.Abandoned)
+            break
 
 
 @pytest.mark.skipif(not REPO, reason="Repository name not defined.")
@@ -107,11 +113,17 @@ class Test_AzApi_Repos_functions_correct_pat:
         prs = self.api.Repos.get_active_pull_requests()
         mck.assert_not_called()
         assert prs.get(pr_id)
-        # Todo prepare fixture to remove PR after test
 
-    #
     def test_get_pullrequest_url(self):
         assert (
             self.api.Repos.get_pullrequest_url(3)
             == f"https://dev.azure.com/{self.api.organization}/{self.api.project}/_git/{self.api.repository_name}/pullrequest/3"
         )
+
+    def test_change_pr_status(self, fixture_create_and_push_test_branch):
+        pr_id = self.api.Repos.create_pr("Test Branch", TEST_BRANCH_NAME, f"refs/heads/{MAIN_BRANCH_NAME}")
+        prs_pre_change = self.api.Repos.get_active_pull_requests()
+        self.api.Repos.change_pr_status(pr_id, PrStatusesDef.Abandoned)
+        prs_post_change = self.api.Repos.get_active_pull_requests()
+        assert prs_pre_change.get(pr_id)
+        assert not prs_post_change.get(pr_id)

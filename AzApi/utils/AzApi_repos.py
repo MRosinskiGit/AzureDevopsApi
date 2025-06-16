@@ -25,6 +25,10 @@ def _require_valid_repo_name(method):
 
     return wrapper
 
+class PrStatusesDef:
+    Abandoned = "abandoned"
+    Active = "active"
+    Completed = "completed"
 
 class _AzRepos:
     def __init__(self, api: "AzApi", repo_name):  # noqa: F821
@@ -64,7 +68,7 @@ class _AzRepos:
         response_json = response.json()
         logger.success(f"Detected {response_json['count']} active Pull Requests.")
         for pr_ix, pr_params in enumerate(response_json["value"], 1):
-            logger.debug(f"\t{pr_ix}. \t{pr_params['title']}")
+            logger.debug(f"\t{pr_ix}. \t{pr_params['title']} | ID: {pr_params['pullRequestId']}")
             logger.debug(f"\t\tFrom: {pr_params['sourceRefName']} to {pr_params['targetRefName']}")
         if raw:
             return response_json["value"]
@@ -317,3 +321,22 @@ class _AzRepos:
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Branch deleted.")
+
+    def change_pr_status(self, pr_id: int, status: PrStatusesDef):
+        """
+        Changes status of Pull Request.
+        Args:
+            pr_id (int): ID of pull request
+            status (PrStatusesDef): new status of PR.
+        """
+        logger.info(f"Changing status of PR{pr_id} to {status}")
+        url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}?api-version=7.2-preview.1"
+        payload = {
+            "status": status,
+        }
+        response = requests.patch(url, json=payload, headers=self.__azure_api._headers("application/json"))
+        if response.status_code != HTTPStatus.OK:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success(f"Response: {response.status_code}, PR status changed to {status}.")
