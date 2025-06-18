@@ -63,14 +63,14 @@ def fixture_clone_repository(fixture_set_git_configuration_pat, tmp_path_factory
 @pytest.fixture()
 def fixture_create_and_push_test_branch(fixture_clone_repository, request):
     git_commands = [
+        ["git", "branch", "-D", TEST_BRANCH_NAME],
         ["git", "checkout", "-b", TEST_BRANCH_NAME],
-        ["git", "push", "-u", "origin", TEST_BRANCH_NAME],
     ]
     repo_path = os.path.join(fixture_clone_repository, REPO)
 
-    subprocess.run(["git", "branch", "-D", TEST_BRANCH_NAME], cwd=repo_path, check=False)
     for cmd in git_commands:
-        subprocess.run(cmd, cwd=repo_path, check=True)
+        subprocess.run(cmd, cwd=repo_path, check=False)
+    subprocess.run(["git", "push", "-u", "origin", TEST_BRANCH_NAME], cwd=repo_path, check=True)
 
     yield
     self = request.instance

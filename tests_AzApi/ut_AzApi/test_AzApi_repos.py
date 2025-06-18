@@ -168,7 +168,7 @@ class Tests_AzApi_repos:
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
             cmd_submodules = "--recurse-submodules --shallow-submodules "
-            assert args[0] == (
+            assert " ".join(args[0]) + " " == (
                 f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {cmd_submodules if submodules else ''}"
                 f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
