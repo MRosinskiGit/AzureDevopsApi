@@ -210,16 +210,15 @@ class _AzRepos:
         repo_log_name = custom_url if custom_url is not None else self.__repo_name
         logger.info(f"Cloning repository {repo_log_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
-        command = "git clone "
         git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
         repo_url = custom_url if custom_url else git_url_std
-        command += f"{repo_url} "
+        command = ["git", "clone", repo_url]
         if submodules:
-            command += "--recurse-submodules --shallow-submodules "
+            command.extend(["--recurse-submodules", "--shallow-submodules"])
         if branch:
-            command += f"--branch {branch} "
+            command.extend(["--branch", branch])
         if depth:
-            command += f"--depth {depth} "
+            command.extend(["--depth", str(depth)])
         env = os.environ.copy()
 
         proc = subprocess.Popen(
