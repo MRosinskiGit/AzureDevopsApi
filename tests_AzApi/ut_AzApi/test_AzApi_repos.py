@@ -200,7 +200,7 @@ class Tests_AzApi_repos:
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
             cmd_submodules = "--recurse-submodules --shallow-submodules "
-            assert " ".join(args[0]) + " 1" == (
+            assert " ".join(args[0]) + " " == (
                 f"git clone https://gitrepolink.git {cmd_submodules if submodules else ''}"
                 f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
