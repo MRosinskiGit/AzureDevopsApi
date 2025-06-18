@@ -25,10 +25,12 @@ def _require_valid_repo_name(method):
 
     return wrapper
 
+
 class PrStatusesDef:
     Abandoned = "abandoned"
     Active = "active"
     Completed = "completed"
+
 
 class _AzRepos:
     def __init__(self, api: "AzApi", repo_name):  # noqa: F821

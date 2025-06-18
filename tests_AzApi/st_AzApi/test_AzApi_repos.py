@@ -31,13 +31,21 @@ TEST_BRANCH_NAME = "tmp_systemtest_branch"
 def fixture_set_git_configuration_pat():
     logger.info("Setting GIT configuration with Token.")
     env = os.environ.copy()
-    git_config_command = f'git config --global http.https://dev.azure.com/.extraheader "Authorization: Bearer {PAT}"'
+    git_config_command = [
+        "git",
+        "config",
+        "--global",
+        "http.https://dev.azure.com/.extraheader",
+        f"Authorization: Bearer {PAT}",
+    ]
+
     subprocess.run(git_config_command, env=env)
 
     yield
 
     logger.info("Removing GIT configuration with Token.")
-    remove_config_command = "git config --global --unset-all http.https://dev.azure.com/.extraheader"
+    remove_config_command = ["git", "config", "--global", "--unset-all", "http.https://dev.azure.com/.extraheader"]
+
     subprocess.run(remove_config_command)
 
 
@@ -45,7 +53,8 @@ def fixture_set_git_configuration_pat():
 def fixture_clone_repository(fixture_set_git_configuration_pat, tmp_path_factory, request):
     output_dir = tmp_path_factory.mktemp("tmp_cloned_repo")
 
-    git_clone_cmd = f"git clone https://{ORG}@dev.azure.com/{ORG}/{PRO}/_git/{REPO}"  # noqa: E501
+    git_clone_cmd = ["git", "clone", f"https://{ORG}@dev.azure.com/{ORG}/{PRO}/_git/{REPO}"]
+
     subprocess.run(git_clone_cmd, cwd=output_dir)
 
     yield output_dir
@@ -54,12 +63,15 @@ def fixture_clone_repository(fixture_set_git_configuration_pat, tmp_path_factory
 @pytest.fixture()
 def fixture_create_and_push_test_branch(fixture_clone_repository, request):
     git_commands = [
-        f"git branch -D {TEST_BRANCH_NAME}",
-        f"git checkout -b {TEST_BRANCH_NAME}",
-        f"git push -u origin {TEST_BRANCH_NAME}",
+        ["git", "checkout", "-b", TEST_BRANCH_NAME],
+        ["git", "push", "-u", "origin", TEST_BRANCH_NAME],
     ]
+    repo_path = os.path.join(fixture_clone_repository, REPO)
+
+    subprocess.run(["git", "branch", "-D", TEST_BRANCH_NAME], cwd=repo_path, check=False)
     for cmd in git_commands:
-        subprocess.run(cmd, cwd=os.path.join(fixture_clone_repository, REPO))
+        subprocess.run(cmd, cwd=repo_path, check=True)
+
     yield
     self = request.instance
     self.api.Repos.delete_branch(TEST_BRANCH_NAME)
