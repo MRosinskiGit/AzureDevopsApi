@@ -6,7 +6,7 @@ line-length = 120
 indent-width = 4
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "B", "I"]
+select = ["E", "F", "W", "B", "I", "ARG"]
 ignore = []
 
 fixable = ["ALL"]
@@ -14,6 +14,7 @@ unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
+"tests_AzApi/**/*.py" = ["ARG001","ARG002"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
