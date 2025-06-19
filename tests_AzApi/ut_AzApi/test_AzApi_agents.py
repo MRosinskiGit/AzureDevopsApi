@@ -1,11 +1,12 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import beartype
 import pytest
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_agents import AgentsBy, _AzAgents
-from ut_AzApi.testdata import (
+from tests_AzApi.ut_AzApi.testdata import (
     get_agent_capabilities_mock,
     get_agents_list_mock,
     get_pools_list_mock,
@@ -63,10 +64,10 @@ def test_AzApi_agents_init_posittvie(api_mock):
         assert isinstance(api.Agents, _AzAgents)
 
 
-@pytest.mark.parametrize("pool_name", [None, "", 123])
-def test_AzApi_agents_init_negative(pool_name):
+@pytest.mark.parametrize("pool_name", [None, 123])
+def test_AzApi_agents_init_negative(api_mock, pool_name):
     api = AzApi("Org", "Pro", "123")
-    with pytest.raises(AttributeError):
+    with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
         api.agent_pool_name = pool_name
     assert api.agent_pool_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):

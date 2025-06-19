@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import beartype
 import pytest
 from dotenv import load_dotenv
 
@@ -43,9 +44,9 @@ class Test_AzApi_correct_pat:
         self.api.repository_name = REPO
         assert isinstance(self.api.Repos, _AzRepos)
 
-    @pytest.mark.parametrize("repo_name", [None, "", 123])
+    @pytest.mark.parametrize("repo_name", [None, 123])
     def test_init_repo_negative(self, repo_name):
-        with pytest.raises(AttributeError):
+        with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
             self.api.repository_name = repo_name
 
     def test_agents_not_initiated(self):
@@ -57,9 +58,9 @@ class Test_AzApi_correct_pat:
         self.api.agent_pool_name = POOL
         assert isinstance(self.api.Agents, _AzAgents)
 
-    @pytest.mark.parametrize("pool_name", [None, "", 123])
+    @pytest.mark.parametrize("pool_name", [None, 123])
     def test_agents_repo_negative(self, pool_name):
-        with pytest.raises(AttributeError):
+        with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
             self.api.agent_pool_name = pool_name
 
     @pytest.mark.skipif(not USER_EMAIL, reason="User email not defined.")

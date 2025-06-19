@@ -5,7 +5,7 @@ from loguru import logger
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
-from ut_AzApi.testdata import create_workitem_mock
+from tests_AzApi.ut_AzApi.testdata import create_workitem_mock
 
 logger.configure(handlers={})
 

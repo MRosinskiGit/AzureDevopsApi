@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from AzApi.AzApi import AzApi
+from AzApi.utils.AzApi_repos import PrStatusesDef
 
 # logger.remove()
 try:
@@ -30,13 +31,21 @@ TEST_BRANCH_NAME = "tmp_systemtest_branch"
 def fixture_set_git_configuration_pat():
     logger.info("Setting GIT configuration with Token.")
     env = os.environ.copy()
-    git_config_command = f'git config --global http.https://dev.azure.com/.extraheader "Authorization: Bearer {PAT}"'
+    git_config_command = [
+        "git",
+        "config",
+        "--global",
+        "http.https://dev.azure.com/.extraheader",
+        f"Authorization: Bearer {PAT}",
+    ]
+
     subprocess.run(git_config_command, env=env)
 
     yield
 
     logger.info("Removing GIT configuration with Token.")
-    remove_config_command = "git config --global --unset-all http.https://dev.azure.com/.extraheader"
+    remove_config_command = ["git", "config", "--global", "--unset-all", "http.https://dev.azure.com/.extraheader"]
+
     subprocess.run(remove_config_command)
 
 
@@ -44,7 +53,8 @@ def fixture_set_git_configuration_pat():
 def fixture_clone_repository(fixture_set_git_configuration_pat, tmp_path_factory, request):
     output_dir = tmp_path_factory.mktemp("tmp_cloned_repo")
 
-    git_clone_cmd = f"git clone https://{ORG}@dev.azure.com/{ORG}/{PRO}/_git/{REPO}"  # noqa: E501
+    git_clone_cmd = ["git", "clone", f"https://{ORG}@dev.azure.com/{ORG}/{PRO}/_git/{REPO}"]
+
     subprocess.run(git_clone_cmd, cwd=output_dir)
 
     yield output_dir
@@ -53,15 +63,23 @@ def fixture_clone_repository(fixture_set_git_configuration_pat, tmp_path_factory
 @pytest.fixture()
 def fixture_create_and_push_test_branch(fixture_clone_repository, request):
     git_commands = [
-        f"git branch -D {TEST_BRANCH_NAME}",
-        f"git checkout -b {TEST_BRANCH_NAME}",
-        f"git push -u origin {TEST_BRANCH_NAME}",
+        ["git", "branch", "-D", TEST_BRANCH_NAME],
+        ["git", "checkout", "-b", TEST_BRANCH_NAME],
     ]
+    repo_path = os.path.join(fixture_clone_repository, REPO)
+
     for cmd in git_commands:
-        subprocess.run(cmd, cwd=os.path.join(fixture_clone_repository, REPO))
+        subprocess.run(cmd, cwd=repo_path, check=False)
+    subprocess.run(["git", "push", "-u", "origin", TEST_BRANCH_NAME], cwd=repo_path, check=True)
+
     yield
     self = request.instance
     self.api.Repos.delete_branch(TEST_BRANCH_NAME)
+    prs = self.api.Repos.get_active_pull_requests()
+    for pr_id, pr_data in prs.items():
+        if pr_data.get("sourceRefName") == f"refs/heads/{TEST_BRANCH_NAME}":
+            self.api.Repos.change_pr_status(pr_id, PrStatusesDef.Abandoned)
+            break
 
 
 @pytest.mark.skipif(not REPO, reason="Repository name not defined.")
@@ -107,11 +125,17 @@ class Test_AzApi_Repos_functions_correct_pat:
         prs = self.api.Repos.get_active_pull_requests()
         mck.assert_not_called()
         assert prs.get(pr_id)
-        # Todo prepare fixture to remove PR after test
 
-    #
     def test_get_pullrequest_url(self):
         assert (
             self.api.Repos.get_pullrequest_url(3)
             == f"https://dev.azure.com/{self.api.organization}/{self.api.project}/_git/{self.api.repository_name}/pullrequest/3"
         )
+
+    def test_change_pr_status(self, fixture_create_and_push_test_branch):
+        pr_id = self.api.Repos.create_pr("Test Branch", TEST_BRANCH_NAME, f"refs/heads/{MAIN_BRANCH_NAME}")
+        prs_pre_change = self.api.Repos.get_active_pull_requests()
+        self.api.Repos.change_pr_status(pr_id, PrStatusesDef.Abandoned)
+        prs_post_change = self.api.Repos.get_active_pull_requests()
+        assert prs_pre_change.get(pr_id)
+        assert not prs_post_change.get(pr_id)

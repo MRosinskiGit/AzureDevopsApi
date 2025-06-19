@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 from functools import wraps
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Dict, Optional, Union
@@ -24,6 +25,12 @@ def _require_valid_repo_name(method):
         return method(self, *args, **kwargs)
 
     return wrapper
+
+
+class PrStatusesDef(str, Enum):
+    Abandoned = "abandoned"
+    Active = "active"
+    Completed = "completed"
 
 
 class _AzRepos:
@@ -64,7 +71,7 @@ class _AzRepos:
         response_json = response.json()
         logger.success(f"Detected {response_json['count']} active Pull Requests.")
         for pr_ix, pr_params in enumerate(response_json["value"], 1):
-            logger.debug(f"\t{pr_ix}. \t{pr_params['title']}")
+            logger.debug(f"\t{pr_ix}. \t{pr_params['title']} | ID: {pr_params['pullRequestId']}")
             logger.debug(f"\t\tFrom: {pr_params['sourceRefName']} to {pr_params['targetRefName']}")
         if raw:
             return response_json["value"]
@@ -204,16 +211,15 @@ class _AzRepos:
         repo_log_name = custom_url if custom_url is not None else self.__repo_name
         logger.info(f"Cloning repository {repo_log_name}...")
         logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
-        command = "git clone "
         git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
         repo_url = custom_url if custom_url else git_url_std
-        command += f"{repo_url} "
+        command = ["git", "clone", repo_url]
         if submodules:
-            command += "--recurse-submodules --shallow-submodules "
+            command.extend(["--recurse-submodules", "--shallow-submodules"])
         if branch:
-            command += f"--branch {branch} "
+            command.extend(["--branch", branch])
         if depth:
-            command += f"--depth {depth} "
+            command.extend(["--depth", str(depth)])
         env = os.environ.copy()
 
         proc = subprocess.Popen(
@@ -317,3 +323,22 @@ class _AzRepos:
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.success("Branch deleted.")
+
+    def change_pr_status(self, pr_id: int, status: PrStatusesDef):
+        """
+        Changes status of Pull Request.
+        Args:
+            pr_id (int): ID of pull request
+            status (PrStatusesDef): new status of PR.
+        """
+        logger.info(f"Changing status of PR{pr_id} to {status}")
+        url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}?api-version=7.2-preview.1"
+        payload = {
+            "status": status,
+        }
+        response = requests.patch(url, json=payload, headers=self.__azure_api._headers("application/json"))
+        if response.status_code != HTTPStatus.OK:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success(f"Response: {response.status_code}, PR status changed to {status}.")

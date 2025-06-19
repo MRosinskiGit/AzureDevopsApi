@@ -1,11 +1,13 @@
 import base64
 from unittest.mock import MagicMock, patch
 
+import beartype
 import pytest
 from loguru import logger
+from requests import RequestException
 
 from AzApi.AzApi import AzApi
-from ut_AzApi.testdata import (
+from tests_AzApi.ut_AzApi.testdata import (
     get_guid_by_descriptor_mock,
     get_list_of_all_org_users_mock_continuous,
     get_list_of_all_org_users_mock_single_use,
@@ -44,6 +46,19 @@ def api_mock():
         }
 
 
+def test_AzApi_init_incorrect_pat(mocker):
+    mck = mocker.patch("AzApi.utils.http_client.requests")
+    mck.get.return_value.status_code = 401
+    with pytest.raises(RequestException):
+        AzApi("Org", "Pro", "123456789")
+
+
+@pytest.mark.parametrize("org, pro", [["Org", None], [None, "Pro"]])
+def test_AzApi_init_incorrect_param(api_mock, org, pro):
+    with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
+        AzApi(org, pro, "123456789")
+
+
 class Tests_AzApi:
     @pytest.fixture(autouse=True)
     def setup(self, api_mock):
@@ -57,6 +72,10 @@ class Tests_AzApi:
     def test_token_getter(self):
         assert self.api.token == "123***789"
 
+    def test_token_setter_incorrect_type(self):
+        with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
+            self.api.token = None
+
     def test_repo_setter(self):
         with patch("AzApi.AzApi._AzRepos") as mock_azrepos:
             mock_azrepos_instance = MagicMock()
@@ -64,12 +83,12 @@ class Tests_AzApi:
             self.api.repository_name = "TestRepo"
             assert self.api.repository_name == "TestRepo"
 
-    @pytest.mark.parametrize("repo_name", ["", 123, None])
+    @pytest.mark.parametrize("repo_name", [123, None])
     def test_repo_setter_exception(self, repo_name):
         with patch("AzApi.AzApi._AzRepos") as mock_azrepos:
             mock_azrepos_instance = MagicMock()
             mock_azrepos.return_value = mock_azrepos_instance
-            with pytest.raises(AttributeError):
+            with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
                 self.api.repository_name = repo_name
 
     def test_repo_getter(self):
@@ -82,12 +101,12 @@ class Tests_AzApi:
             self.api.agent_pool_name = "TestPool"
             assert self.api.agent_pool_name == "TestPool"
 
-    @pytest.mark.parametrize("pool_name", ["", 123, None])
+    @pytest.mark.parametrize("pool_name", [123, None])
     def test_pool_setter_exception(self, pool_name):
         with patch("AzApi.AzApi._AzAgents") as mock:
             mock_instance = MagicMock()
             mock.return_value = mock_instance
-            with pytest.raises(AttributeError):
+            with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
                 self.api.agent_pool_name = pool_name
 
     def test_pool_getter(self):

@@ -1,11 +1,12 @@
 from unittest.mock import MagicMock, patch
 
+import beartype
 import pytest
 from loguru import logger
 
 from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_repos import _AzRepos
-from ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
+from AzApi.utils.AzApi_repos import PrStatusesDef, _AzRepos
+from tests_AzApi.ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
 logger.configure(handlers={})
 
@@ -43,7 +44,7 @@ def api_mock():
         }
 
 
-def test_AzApi_repo_init_positivie():
+def test_AzApi_repo_init_positivie(api_mock):
     api = AzApi("Org", "Pro", "123")
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
@@ -53,10 +54,10 @@ def test_AzApi_repo_init_positivie():
     assert api.Repos is not Ellipsis
 
 
-@pytest.mark.parametrize("repo_name", [None, "", 123])
-def test_AzApi_repo_init_negative(repo_name):
+@pytest.mark.parametrize("repo_name", [None, 123])
+def test_AzApi_repo_init_negative(api_mock, repo_name):
     api = AzApi("Org", "Pro", "123")
-    with pytest.raises(AttributeError):
+    with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
         api.repository_name = repo_name
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
@@ -65,7 +66,7 @@ def test_AzApi_repo_init_negative(repo_name):
 
 class Tests_AzApi_repos:
     @pytest.fixture(autouse=True)
-    def setup(self, api_mock):
+    def setup_method(self, api_mock):
         self.api_mock = api_mock
         self.api = AzApi("Org", "Pro", "123")
         self.api.repository_name = "Repo"
@@ -75,11 +76,11 @@ class Tests_AzApi_repos:
         assert self.api.repository_name == "Repos2"
         assert self.api.Repos is not Ellipsis
 
-    @pytest.mark.parametrize("repo_name", [None, "", 123])
+    @pytest.mark.parametrize("repo_name", [None, 123])
     def test_change_repo_name_negative(self, repo_name):
         old_repo_instance = self.api.Repos
         old = self.api.repository_name
-        with pytest.raises(AttributeError):
+        with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
             self.api.repository_name = repo_name
         assert self.api.repository_name == old
         assert self.api.Repos is old_repo_instance
@@ -168,7 +169,7 @@ class Tests_AzApi_repos:
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
             cmd_submodules = "--recurse-submodules --shallow-submodules "
-            assert args[0] == (
+            assert " ".join(args[0]) + " " == (
                 f"git clone https://Org@dev.azure.com/Org/Pro/_git/Repo {cmd_submodules if submodules else ''}"
                 f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
@@ -200,7 +201,7 @@ class Tests_AzApi_repos:
             mck_subprocess.assert_called_once()
             args, kwargs = mck_subprocess.call_args
             cmd_submodules = "--recurse-submodules --shallow-submodules "
-            assert args[0] == (
+            assert " ".join(args[0]) + " " == (
                 f"git clone https://gitrepolink.git {cmd_submodules if submodules else ''}"
                 f"{'--branch ' + branch + ' ' if branch else ''}{'--depth ' + str(depth) + ' ' if depth else ''}"
             )
@@ -229,3 +230,10 @@ class Tests_AzApi_repos:
         with patch.object(self.api.Repos, "get_all_branches") as mck:
             mck.return_value = {"refs/heads/test1": {"objectId": "11111111111111111111111111111111111111"}}
             self.api.Repos.delete_branch(branch_name)
+
+    @pytest.mark.parametrize("status", [PrStatusesDef.Abandoned, PrStatusesDef.Completed, PrStatusesDef.Active])
+    def test_change_pr_status(self, status):
+        self.api.Repos.change_pr_status(1, status)
+        self.api_mock["patch"].assert_called_once()
+        args, kwargs = self.api_mock["patch"].call_args
+        assert kwargs.get("json") == {"status": status}
