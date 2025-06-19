@@ -6,12 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Repos: `change_pr_status` method ✔
 - Boards: `get_work_items` method ✘
 - System tests ✘ - Ongoing: Repos - 70%, Boards - 0% ✘
 - Preparation for PyPi deploy ✘
 - Boards: Reading objects by SQL ✘
 - Extended handling of incorrect API response status code ✘
+
+## [1.2.4] - 19.06.2025
+### Added
+- Repos: `change_pr_status` method ✔
+- AzApi: added connection verification ✔
+- added `beartype` input parameters check ✔
 
 ## [1.2.3] - 12.06.2025
 ### Added
