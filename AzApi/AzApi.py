@@ -1,6 +1,7 @@
 import base64
 from typing import Dict, Union
 
+from beartype import beartype
 from loguru import logger
 from requests.exceptions import RequestException
 
@@ -11,6 +12,7 @@ from .utils.http_client import requests
 
 
 class AzApi:
+    @beartype
     def __init__(self, organization: str, project: str, token: str):
         """
         Constructor for AzApi Tool.
@@ -25,6 +27,7 @@ class AzApi:
         self.__b64_token = ...
         self.__token = ...
         self.token = token
+        self.__verify_connection()
         self.__users_data = ...
 
         # Components
@@ -46,6 +49,7 @@ class AzApi:
         return self.__token[:3] + "***" + self.__token[-3:]
 
     @token.setter
+    @beartype
     def token(self, token: str) -> None:
         """
         Setter for PAT.
@@ -54,8 +58,6 @@ class AzApi:
         Raises:
              TypeError: if token is not a string type
         """
-        if not isinstance(token, str):
-            raise TypeError("Token is not a string object.")
         self.__token = token
         self.__b64_token = base64.b64encode(f":{self.__token}".encode()).decode()
         logger.success("Private Access Token is set.")
@@ -244,3 +246,13 @@ class AzApi:
         guid = response.get("value")
         logger.success(f"GUID found: {guid}")
         return guid
+
+    def __verify_connection(self):
+        logger.info(f"Verifying connection to {self.organization}/{self.project}...")
+        url = f"https://dev.azure.com/{self.organization}/{self.project}"
+        response = requests.get(url=url, headers=self._headers())
+        if response.status_code != 200:
+            logger.error(f"Connection error: {response.status_code}")
+            logger.debug(f"Error message: {response.text}")
+            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        logger.success(f"Connection to {self.organization}/{self.project} established successfully.")

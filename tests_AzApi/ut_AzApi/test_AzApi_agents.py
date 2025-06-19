@@ -64,7 +64,7 @@ def test_AzApi_agents_init_posittvie(api_mock):
 
 
 @pytest.mark.parametrize("pool_name", [None, "", 123])
-def test_AzApi_agents_init_negative(pool_name):
+def test_AzApi_agents_init_negative(api_mock, pool_name):
     api = AzApi("Org", "Pro", "123")
     with pytest.raises(AttributeError):
         api.agent_pool_name = pool_name

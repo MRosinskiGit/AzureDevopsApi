@@ -43,7 +43,7 @@ def api_mock():
         }
 
 
-def test_AzApi_repo_init_positivie():
+def test_AzApi_repo_init_positivie(api_mock):
     api = AzApi("Org", "Pro", "123")
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
@@ -54,7 +54,7 @@ def test_AzApi_repo_init_positivie():
 
 
 @pytest.mark.parametrize("repo_name", [None, "", 123])
-def test_AzApi_repo_init_negative(repo_name):
+def test_AzApi_repo_init_negative(api_mock, repo_name):
     api = AzApi("Org", "Pro", "123")
     with pytest.raises(AttributeError):
         api.repository_name = repo_name
