@@ -83,12 +83,12 @@ class Tests_AzApi:
             self.api.repository_name = "TestRepo"
             assert self.api.repository_name == "TestRepo"
 
-    @pytest.mark.parametrize("repo_name", ["", 123, None])
+    @pytest.mark.parametrize("repo_name", [123, None])
     def test_repo_setter_exception(self, repo_name):
         with patch("AzApi.AzApi._AzRepos") as mock_azrepos:
             mock_azrepos_instance = MagicMock()
             mock_azrepos.return_value = mock_azrepos_instance
-            with pytest.raises(AttributeError):
+            with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
                 self.api.repository_name = repo_name
 
     def test_repo_getter(self):
@@ -101,12 +101,12 @@ class Tests_AzApi:
             self.api.agent_pool_name = "TestPool"
             assert self.api.agent_pool_name == "TestPool"
 
-    @pytest.mark.parametrize("pool_name", ["", 123, None])
+    @pytest.mark.parametrize("pool_name", [123, None])
     def test_pool_setter_exception(self, pool_name):
         with patch("AzApi.AzApi._AzAgents") as mock:
             mock_instance = MagicMock()
             mock.return_value = mock_instance
-            with pytest.raises(AttributeError):
+            with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
                 self.api.agent_pool_name = pool_name
 
     def test_pool_getter(self):

@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import beartype
 import pytest
 from loguru import logger
 
@@ -53,10 +54,10 @@ def test_AzApi_repo_init_positivie(api_mock):
     assert api.Repos is not Ellipsis
 
 
-@pytest.mark.parametrize("repo_name", [None, "", 123])
+@pytest.mark.parametrize("repo_name", [None, 123])
 def test_AzApi_repo_init_negative(api_mock, repo_name):
     api = AzApi("Org", "Pro", "123")
-    with pytest.raises(AttributeError):
+    with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
         api.repository_name = repo_name
     assert api.repository_name is Ellipsis
     with pytest.raises(AzApi.ComponentException):
@@ -75,11 +76,11 @@ class Tests_AzApi_repos:
         assert self.api.repository_name == "Repos2"
         assert self.api.Repos is not Ellipsis
 
-    @pytest.mark.parametrize("repo_name", [None, "", 123])
+    @pytest.mark.parametrize("repo_name", [None, 123])
     def test_change_repo_name_negative(self, repo_name):
         old_repo_instance = self.api.Repos
         old = self.api.repository_name
-        with pytest.raises(AttributeError):
+        with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
             self.api.repository_name = repo_name
         assert self.api.repository_name == old
         assert self.api.Repos is old_repo_instance

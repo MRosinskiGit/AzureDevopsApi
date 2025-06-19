@@ -57,7 +57,7 @@ class AzApi:
         Args:
             token (str): Private Access Token
         Raises:
-             TypeError: if token is not a string type
+            beartype.roar.BeartypeCallHintParamViolation: If any attribute is in incorrect type.
         """
         self.__token = token
         self.__b64_token = base64.b64encode(f":{self.__token}".encode()).decode()
@@ -79,17 +79,15 @@ class AzApi:
         return self.__repo_name
 
     @repository_name.setter
+    @beartype
     def repository_name(self, name: str):
         """
         Setter for repository name. If repository name is valid it initiates constructor for AzRepos component.
         Args:
             name (str): Azures repository name.
         Raises:
-            AttributeError: If `name` is not a string object or is empty string.
+            beartype.roar.BeartypeCallHintParamViolation: If any attribute is in incorrect type.
         """
-        if not isinstance(name, str) or name == "":
-            logger.error(f"{name} is not a valid repository name.")
-            raise AttributeError("Invalid repository name: must be a non-empty string.")
         self.__repo_name = name
         self.__Repos = _AzRepos(self, self.__repo_name)
 
@@ -120,17 +118,15 @@ class AzApi:
         return self.__pool_name
 
     @agent_pool_name.setter
+    @beartype
     def agent_pool_name(self, pool_name: str):
         """
         Setter for Agent's Pool name. If Pool name is valid it initiates constructor for AzRepos component.
         Args:
             pool_name (str): Agent's pool name
         Raises:
-            AttributeError: If `pool_name` is not a string object or is empty string.
+            beartype.roar.BeartypeCallHintParamViolation: If any attribute is in incorrect type.
         """
-        if not isinstance(pool_name, str) or pool_name == "":
-            logger.error(f"{pool_name} is not a valid pool name.")
-            raise AttributeError("Invalid pool name: must be a non-empty string.")
         self.__pool_name = pool_name
         self.__Agents = _AzAgents(self, pool_name)
 
@@ -205,6 +201,7 @@ class AzApi:
         logger.success("No continuation token — Download complete.")
         return all_data_dict
 
+    @beartype
     def search_user_aad_descriptor_by_email(self, email: str) -> Union[str, None]:
         """
         Searches unique user's AAD identifier in the user's database. Descriptor is required to get unique Global User
@@ -215,6 +212,8 @@ class AzApi:
             str: User's unique Azure Active Domain descriptor.
             or
             None: If email was not found in database.
+        Raises:
+            beartype.roar.BeartypeCallHintParamViolation: If `descriptor` is not a string type.
         """
         logger.info(f"Searching Active Domain descriptor for email {email}")
         if self.__users_data is Ellipsis:
@@ -228,6 +227,7 @@ class AzApi:
         logger.success(f"Descriptor found: {descriptor}")
         return descriptor
 
+    @beartype
     def get_guid_by_descriptor(self, descriptor: str) -> str:
         """
         Based on provided AAD Descriptor sends requests to get user's GUID (Global User ID).
@@ -237,6 +237,7 @@ class AzApi:
             str: User's GUID
         Raises:
             RequestException: When API Request was not successful.
+            beartype.roar.BeartypeCallHintParamViolation: If `descriptor` is not a string type.
         """
         logger.info(f"Reading GUID for descriptor {descriptor}")
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
