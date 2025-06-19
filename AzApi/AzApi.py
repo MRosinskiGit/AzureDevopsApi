@@ -1,4 +1,5 @@
 import base64
+from http import HTTPStatus
 from typing import Dict, Union
 
 from beartype import beartype
@@ -166,6 +167,8 @@ class AzApi:
         Private method to download all organization's user's accounts data.
         Returns:
            Dict[str, dict]: Dict with all accounts data sorted with account's email as key.
+        Raises:
+            RequestException: When API Request was not successful.
         Example:
             >>> self.__get_list_of_all_org_users()
             {"user1@gmail.com": {... "principalName":"user1@gmail.com","mailAddress":"user1@gmail.com","origin":"msa","originId":"00034001089CAF73" ...},
@@ -173,7 +176,7 @@ class AzApi:
         """  # noqa: E501
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
@@ -188,7 +191,7 @@ class AzApi:
         while continuation_token:
             url = f"https://vssps.dev.azure.com/SW4ZF/_apis/graph/users?api-version=7.2-preview.1&continuationToken={continuation_token}"
             response = requests.get(url, headers=self._headers())
-            if response.status_code != 200:
+            if response.status_code != HTTPStatus.OK:
                 logger.error(f"Connection error: {response.status_code}")
                 logger.debug(f"Error message: {response.text}")
                 raise RequestException(f"Response Error. Status Code: {response.status_code}.")
@@ -238,7 +241,7 @@ class AzApi:
         logger.info(f"Reading GUID for descriptor {descriptor}")
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
@@ -248,10 +251,15 @@ class AzApi:
         return guid
 
     def __verify_connection(self):
+        """
+        Gets connection to Azure DevOps API and verifies if provided organization and project are valid.
+        Raises:
+            RequestException: If connection to Azure DevOps API was not successful.
+        """
         logger.info(f"Verifying connection to {self.organization}/{self.project}...")
         url = f"https://dev.azure.com/{self.organization}/{self.project}"
         response = requests.get(url=url, headers=self._headers())
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             logger.error(f"Connection error: {response.status_code}")
             logger.debug(f"Error message: {response.text}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
