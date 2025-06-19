@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
@@ -10,18 +11,18 @@ if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
 
 
-class WorkItemsDef:
+class WorkItemsDef(str, Enum):
     Task = "Task"
     TestCase = "Test Case"
 
 
 class WorkItemsStatesDef:
-    class Task:
+    class Task(str, Enum):
         To_Do = "To Do"
         Doing = "Doing"
         Done = "Done"
 
-    class TestCase:
+    class TestCase(str, Enum):
         Design = "Design"
         Ready = "Ready"
         Closed = "Closed"

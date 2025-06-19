@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 from functools import wraps
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Dict, Optional, Union
@@ -26,7 +27,7 @@ def _require_valid_repo_name(method):
     return wrapper
 
 
-class PrStatusesDef:
+class PrStatusesDef(str, Enum):
     Abandoned = "abandoned"
     Active = "active"
     Completed = "completed"
