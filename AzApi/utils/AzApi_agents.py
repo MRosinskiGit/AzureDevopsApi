@@ -1,7 +1,7 @@
 import json
 from enum import Enum, auto
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from loguru import logger
 from requests.exceptions import RequestException
@@ -49,7 +49,7 @@ class _AzAgents:
         logger.success("Agents Component initialized.")
 
     @property
-    def all_agents(self) -> Dict[str, dict]:
+    def all_agents(self) -> dict[str, dict]:
         """
         Getter for all available agents in the pool.
         Returns:
@@ -70,7 +70,7 @@ class _AzAgents:
         """
         return self.__all_agents
 
-    def __get_all_pools(self) -> Dict[str, int]:
+    def __get_all_pools(self) -> dict[str, int]:
         """
         Private method to download all available agents pools in the organization.
         Returns:
@@ -89,7 +89,7 @@ class _AzAgents:
         logger.success("Pools list updated.")
         return {pool.get("name"): pool.get("id") for pool in response_json}
 
-    def __get_all_agents(self, pool_id: int) -> Dict[str, dict]:
+    def __get_all_agents(self, pool_id: int) -> dict[str, dict]:
         """
         Private method to download all available agents in the specific pool.
         Returns:
@@ -198,7 +198,7 @@ class _AzAgents:
         }
 
     @_require_valid_pool_name
-    def add_user_capabilities(self, key: Union[str, int], by: AgentsBy, capabilities: Dict[str, str]) -> None:
+    def add_user_capabilities(self, key: Union[str, int], by: AgentsBy, capabilities: dict[str, str]) -> None:
         """
         Adds new user capabiblity to Agent's Settings.
         Args:

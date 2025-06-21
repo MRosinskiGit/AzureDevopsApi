@@ -1,11 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from beartype.door import is_bearable
 from loguru import logger
 
 from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
-from tests_AzApi.ut_AzApi.testdata import create_workitem_mock
+from AzApi.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
+from tests_AzApi.ut_AzApi.testdata import create_workitem_mock, id_details_response_mock, wiql_response_mock
 
 logger.configure(handlers={})
 
@@ -25,7 +26,7 @@ def api_mock():
         mock_response.json.return_value = {}
 
         mock_response_put = MagicMock()
-        mock_response_put.status_code = 201
+        mock_response_put.status_code = 200
         mock_response_put.json.return_value = {}
 
         mock_get.return_value = mock_response
@@ -56,3 +57,11 @@ class Tests_AzApi_boards:
     def test_change_work_item_state(self):
         self.api.Boards.change_work_item_state(4, WorkItemsStatesDef.TestCase.Design)
         self.api_mock["patch"].assert_called_once()
+
+    def test_get_work_items(self, api_mock):
+        api_mock["post"].return_value = wiql_response_mock
+        api_mock["get"].return_value = id_details_response_mock
+        items = self.api.Boards.get_work_items(
+            WorkItemsDef.Task, allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing]
+        )
+        assert is_bearable(items, dict[int, WorkItem])
