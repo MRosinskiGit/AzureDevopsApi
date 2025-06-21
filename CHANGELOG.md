@@ -6,10 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Boards: `get_work_items` method ✘
-- System tests ✘ - Ongoing: Repos - 70%, Boards - 0% ✘
+- Boards: `get_work_items` method ✔
+- System tests ✔
 - Preparation for PyPi deploy ✘
-- Boards: Reading objects by SQL ✘
 - Extended handling of incorrect API response status code ✘
 
 ## [1.2.4] - 19.06.2025
