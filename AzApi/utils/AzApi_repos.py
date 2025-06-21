@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from functools import wraps
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from loguru import logger
 from requests.exceptions import RequestException
@@ -40,7 +40,7 @@ class _AzRepos:
         logger.success("Repository Module initiated.")
 
     @_require_valid_repo_name
-    def get_active_pull_requests(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+    def get_active_pull_requests(self, raw: bool = False) -> Union[dict[str, dict], list]:
         """
         Gets all active Pull Requests in defined repository.
         Args:
@@ -137,7 +137,7 @@ class _AzRepos:
         return pr_id
 
     @_require_valid_repo_name
-    def get_all_branches(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+    def get_all_branches(self, raw: bool = False) -> Union[dict[str, dict], list]:
         """
         Reads all existing branches on the repo.
         Args:

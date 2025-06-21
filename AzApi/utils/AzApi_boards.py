@@ -2,7 +2,7 @@ import datetime
 import json
 from enum import Enum
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from loguru import logger
 from pydantic import BaseModel, EmailStr
@@ -154,7 +154,7 @@ class _AzBoards:
                 filter work items.
 
         Returns:
-            Dict[int, WorkItem]: A dictionary mapping work item IDs to their corresponding WorkItem objects.
+            dict[int, WorkItem]: A dictionary mapping work item IDs to their corresponding WorkItem objects.
 
         Raises:
             RequestException: If the API request fails or returns a non-OK status code.

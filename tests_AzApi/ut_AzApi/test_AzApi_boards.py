@@ -1,4 +1,3 @@
-from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -65,4 +64,4 @@ class Tests_AzApi_boards:
         items = self.api.Boards.get_work_items(
             WorkItemsDef.Task, allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing]
         )
-        assert is_bearable(items, Dict[int, WorkItem])
+        assert is_bearable(items, dict[int, WorkItem])

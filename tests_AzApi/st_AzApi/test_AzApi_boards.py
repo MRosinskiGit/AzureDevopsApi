@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Dict
 
 import pytest
 from beartype.door import is_bearable
@@ -112,5 +111,5 @@ class Tests_AzApi_boards:
             WorkItemsDef.Task, allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing]
         )
         testcases = self.api.Boards.get_work_items(WorkItemsDef.TestCase)
-        assert is_bearable(tasks, Dict[int, WorkItem])
-        assert is_bearable(testcases, Dict[int, WorkItem])
+        assert is_bearable(tasks, dict[int, WorkItem])
+        assert is_bearable(testcases, dict[int, WorkItem])

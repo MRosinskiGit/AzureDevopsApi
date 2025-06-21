@@ -1,6 +1,6 @@
 import base64
 from http import HTTPStatus
-from typing import Dict, Union
+from typing import Union
 
 from beartype import beartype
 from loguru import logger
@@ -158,11 +158,11 @@ class AzApi:
             "Authorization": f"Basic {self.__b64_token}",
         }
 
-    def __get_list_of_all_org_users(self) -> Dict[str, dict]:
+    def __get_list_of_all_org_users(self) -> dict[str, dict]:
         """
         Private method to download all organization's user's accounts data.
         Returns:
-           Dict[str, dict]: Dict with all accounts data sorted with account's email as key.
+           dict[str, dict]: dict with all accounts data sorted with account's email as key.
         Raises:
             RequestException: When API Request was not successful.
         Example:
