@@ -226,7 +226,7 @@ class _AzBoards:
                 logger.exception(e)
                 logger.error(f"Failed to parse work item {item['id']}. Skipping.")
         logger.info(
-            f"Retrieved {len(work_items)} work items of type {type_of_workitem} "
+            f"SUCCESS: Retrieved {len(work_items)} work items of type {type_of_workitem} "
             f"with states {kwargs.get('allowed_states', 'all')}."
         )
         logger.debug(work_items)
