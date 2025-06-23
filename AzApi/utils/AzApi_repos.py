@@ -70,7 +70,7 @@ class _AzRepos:
         logger.info("SUCCESS: Response received.")
 
         response_json = response.json()
-        logger.info(f"Detected {response_json['count']} active Pull Requests.")
+        logger.info(f"SUCCESS: Detected {response_json['count']} active Pull Requests.")
         for pr_ix, pr_params in enumerate(response_json["value"], 1):
             logger.debug(f"\t{pr_ix}. \t{pr_params['title']} | ID: {pr_params['pullRequestId']}")
             logger.debug(f"\t\tFrom: {pr_params['sourceRefName']} to {pr_params['targetRefName']}")
