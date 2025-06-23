@@ -1,14 +1,16 @@
 import json
+import logging
 from enum import Enum, auto
 from functools import wraps
 from typing import TYPE_CHECKING, Union
 
-from loguru import logger
 from requests.exceptions import RequestException
 
 if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
 from .http_client import requests
+
+logger = logging.getLogger(__name__)
 
 
 def _require_valid_pool_name(method):
@@ -46,7 +48,7 @@ class _AzAgents:
             logger.debug(f"{self.__pool_name} not found in {self.__all_pools}.")
             raise NameError("Pool name not detected in organization.")
         self.__all_agents = self.__get_all_agents(self.__pool_id)
-        logger.success("Agents Component initialized.")
+        logger.info("SUCCESS: Agents Component initialized.")
 
     @property
     def all_agents(self) -> dict[str, dict]:
@@ -81,12 +83,11 @@ class _AzAgents:
         response = requests.get(url, headers=self.__azure_api._headers())
 
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.debug(f"Found {response.json()['count']} pools.")
         response_json = response.json()["value"]
-        logger.success("Pools list updated.")
+        logger.info("SUCCESS: Pools list updated.")
         return {pool.get("name"): pool.get("id") for pool in response_json}
 
     def __get_all_agents(self, pool_id: int) -> dict[str, dict]:
@@ -111,8 +112,7 @@ class _AzAgents:
         response = requests.get(url, headers=self.__azure_api._headers())
 
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         logger.debug(f"Found {response.json()['count']} agents.")
         response_json = response.json()["value"]
@@ -125,7 +125,7 @@ class _AzAgents:
                 "capabilities": capabilities,
                 "status": agent.get("status"),
             }
-        logger.success("Agents list updated.")
+        logger.info("SUCCESS: Agents list updated.")
         return result
 
     def __resolve_agent_key(self, key: Union[str, int], by: AgentsBy) -> int:
@@ -149,14 +149,14 @@ class _AzAgents:
             case AgentsBy.Agent_Name:
                 _ = key
                 key = self.__all_agents[key]["id"]
-                logger.trace(f"Swapping {_} to {key}")
+                logger.debug(f"TRACE: Swapping {_} to {key}")
                 return key
             case AgentsBy.PC_Name:
                 for _, agent_data in self.__all_agents.items():
                     if agent_data.get("pc_name") == key:
                         _ = key
                         key = agent_data.get("id")
-                        logger.trace(f"Swapping {_} to {key}")
+                        logger.debug(f"TRACE: Swapping {_} to {key}")
                         return key
                     raise KeyError(f"{key} not found in all agents list.")
             case _:
@@ -187,8 +187,7 @@ class _AzAgents:
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}?includeCapabilities=true&api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
         response_json = response.json()
@@ -231,10 +230,9 @@ class _AzAgents:
         )
 
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success("Capabilities modified.")
+        logger.info("SUCCESS: Capabilities modified.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities
 
     @_require_valid_pool_name
@@ -249,7 +247,7 @@ class _AzAgents:
         Examples:
             >>> api = AzApi('org','pro','pat')
             >>> api.agent_pool_name = "pool"
-            >>> capabilities = api.Agents.remove_user_capabilities(2, AgentsBy.ID, ["hardware_ready","agent_busy"]})
+            >>> capabilities = api.Agents.remove_user_capabilities(2, AgentsBy.ID, ["hardware_ready","agent_busy"])
         """
         logger.info(f"Removing capability: {capabilities} for agent: {key}...")
         key = self.__resolve_agent_key(key, by)
@@ -274,8 +272,7 @@ class _AzAgents:
         )
 
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success("Capabilities removed.")
+        logger.info("SUCCESS: Capabilities removed.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities
