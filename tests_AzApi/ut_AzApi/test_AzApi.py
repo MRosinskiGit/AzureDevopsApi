@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 import beartype
 import pytest
-from loguru import logger
 from requests import RequestException
 
 from AzApi.AzApi import AzApi
@@ -12,8 +11,6 @@ from tests_AzApi.ut_AzApi.testdata import (
     get_list_of_all_org_users_mock_continuous,
     get_list_of_all_org_users_mock_single_use,
 )
-
-logger.configure(handlers={})
 
 
 @pytest.fixture

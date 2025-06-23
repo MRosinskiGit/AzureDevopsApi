@@ -1,9 +1,15 @@
+import logging
 import tempfile
 
 from AzApi.AzApi import AzApi
 from AzApi.utils.AzApi_agents import AgentsBy
 from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
 
+logging.basicConfig(
+    level=logging.INFO,  # albo INFO, WARNING itp.
+    # format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+# TODO update examples to use AzApi v1.2.4
 # Examples:
 ## Init
 api = AzApi(organization="ORGANIZATION_NAME", project="PROJECT_NAME", token="PAT")

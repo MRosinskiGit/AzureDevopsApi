@@ -1,15 +1,17 @@
 import base64
+import logging
 from http import HTTPStatus
 from typing import Union
 
 from beartype import beartype
-from loguru import logger
 from requests.exceptions import RequestException
 
 from .utils.AzApi_agents import _AzAgents
 from .utils.AzApi_boards import _AzBoards
 from .utils.AzApi_repos import _AzRepos
 from .utils.http_client import requests
+
+logger = logging.getLogger(__name__)
 
 
 class AzApi:
@@ -61,7 +63,7 @@ class AzApi:
         """
         self.__token = token
         self.__b64_token = base64.b64encode(f":{self.__token}".encode()).decode()
-        logger.success("Private Access Token is set.")
+        logger.info("SUCCESS: Private Access Token is set.")
 
     class ComponentException(Exception):
         def __init__(self, msg="Component was not initiated."):
@@ -173,8 +175,7 @@ class AzApi:
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         all_data_dict = {}
         for user in response.json()["value"]:
@@ -182,14 +183,13 @@ class AzApi:
                 all_data_dict.update({user.get("mailAddress").lower(): user})
         logger.debug(f"Downloading data... Currently downloaded: {len(all_data_dict)} records.")
         continuation_token = response.headers.get("x-ms-continuationtoken")
-        logger.trace(f"Next page token: {continuation_token}")
+        logger.debug(f"TRACE: Next page token: {continuation_token}")
 
         while continuation_token:
             url = f"https://vssps.dev.azure.com/SW4ZF/_apis/graph/users?api-version=7.2-preview.1&continuationToken={continuation_token}"
             response = requests.get(url, headers=self._headers())
             if response.status_code != HTTPStatus.OK:
-                logger.error(f"Connection error: {response.status_code}")
-                logger.debug(f"Error message: {response.text}")
+                logger.error(f"Connection error: {response.status_code} | {response.reason}")
                 raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
             for user in response.json()["value"]:
@@ -198,7 +198,7 @@ class AzApi:
             logger.debug(f"Downloading data... Currently downloaded:{len(all_data_dict)}")
             continuation_token = response.headers.get("x-ms-continuationtoken")
             logger.debug(f"Next page token: {continuation_token}")
-        logger.success("No continuation token — Download complete.")
+        logger.info("SUCCESS: No continuation token — Download complete.")
         return all_data_dict
 
     @beartype
@@ -224,7 +224,7 @@ class AzApi:
             logger.warning("User not found.")
             return None
         descriptor = user.get("descriptor")
-        logger.success(f"Descriptor found: {descriptor}")
+        logger.info(f"Descriptor found: {descriptor}")
         return descriptor
 
     @beartype
@@ -243,12 +243,11 @@ class AzApi:
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         response = response.json()
         guid = response.get("value")
-        logger.success(f"GUID found: {guid}")
+        logger.info(f"SUCCESS: GUID found: {guid}")
         return guid
 
     def __verify_connection(self):
@@ -261,7 +260,6 @@ class AzApi:
         url = f"https://dev.azure.com/{self.organization}/{self.project}"
         response = requests.get(url=url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success(f"Connection to {self.organization}/{self.project} established successfully.")
+        logger.info(f"SUCCESS: Connection to {self.organization}/{self.project} established successfully.")
