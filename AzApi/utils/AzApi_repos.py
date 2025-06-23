@@ -286,7 +286,7 @@ class _AzRepos:
         if response.status_code not in [200, 201]:
             logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.info(f"Response: {response.status_code}, User added as reviewer.")
+        logger.info(f"SUCCESS: Response: {response.status_code}, User added as reviewer.")
 
     @_require_valid_repo_name
     def delete_branch(self, branch_name: str):
