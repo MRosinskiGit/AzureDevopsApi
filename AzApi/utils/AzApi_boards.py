@@ -139,7 +139,7 @@ class _AzBoards:
         if response.status_code != 200:
             logger.error(f"Error: {response.status_code}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.info(f"State of object changed to {state}.")
+        logger.info(f"SUCCESS: State of object changed to {state}.")
 
     def get_work_items(self, type_of_workitem: WorkItemsDef, **kwargs) -> dict[int, WorkItem]:
         """
