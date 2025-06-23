@@ -1,5 +1,3 @@
-from AzApi.utils.AzApi_boards import WorkItemsDef
-
 # AzApi
 
 **AzApi** is a complementary Python library designed to simplify and unify access to various Azure DevOps services via the REST API.
@@ -9,7 +7,7 @@ from AzApi.utils.AzApi_boards import WorkItemsDef
 Current progress and expected features are described in [`CHANGELOG.md`](CHANGELOG.md).
 ## Features
 
-AzApi provides a modular, object-oriented interface to the most commonly used Azure DevOps services:
+AzApi provides a modular, object-oriented interface to the most commonly used Azure DevOps services with logger support:
 
 - `Boards` – work items, queries, iterations, and more
 - `Repos` – repositories, branches, pull requests
@@ -56,6 +54,8 @@ pr_id = api.Repos.create_pr("Test PullRequest", "TestBranch", "main", "Testing A
 api.Repos.add_pr_reviewer(pr_id, "user1@gmail.com")
 
 ```
+## Logging
+AzApi supports logging via the standard Python `logging` module. You can configure the logger to output to a file or console as needed. The library provides detailed logs for API requests and responses, which can be useful for debugging.
 
 ## Testing
 
@@ -70,7 +70,7 @@ To run all tests set working directory to main project dir and:
 pytest .\tests_AzApi\
 ```
 
-or start `tools/run_test.bat` for test report and coverage logs.
+or open terminal in `tools` directory and run `./run_test.bat` for full unit and system test report with coverage logs.
 
 
 ## License
