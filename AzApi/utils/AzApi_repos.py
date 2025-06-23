@@ -133,7 +133,7 @@ class _AzRepos:
             logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         pr_id = response.json()["pullRequestId"]
-        logger.info(f"Response received. PR numer: {pr_id}")
+        logger.info(f"SUCCESS: Response received. PR numer: {pr_id}")
         return pr_id
 
     @_require_valid_repo_name
