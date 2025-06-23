@@ -1,8 +1,10 @@
+import logging
 from http import HTTPStatus
 
 import requests as _requests
-from loguru import logger
 from requests.adapters import HTTPAdapter, Retry
+
+logger = logging.getLogger(__name__)
 
 
 def _create_requests_session_with_retries_strategy() -> _requests.Session:
@@ -31,8 +33,9 @@ def _create_requests_session_with_retries_strategy() -> _requests.Session:
 
     session.mount("https://", HTTPAdapter(max_retries=retries))
     session.mount("http://", HTTPAdapter(max_retries=retries))
-    logger.success("Session created.")
+    logger.info("SUCCESS: Session created.")
     return session
 
 
+# Global object for requests session with retries strategy
 requests = _create_requests_session_with_retries_strategy()

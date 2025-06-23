@@ -18,3 +18,7 @@ unfixable = []
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "DEBUG"

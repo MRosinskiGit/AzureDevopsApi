@@ -1,10 +1,10 @@
 import datetime
 import json
+import logging
 from enum import Enum
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Optional, Union
 
-from loguru import logger
 from pydantic import BaseModel, EmailStr
 from requests.exceptions import RequestException
 
@@ -15,6 +15,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from AzApi.AzApi import AzApi
+logger = logging.getLogger(__name__)
 
 
 class WorkItemsDef(str, Enum):
@@ -109,11 +110,9 @@ class _AzBoards:
 
         if response.status_code != 200:
             logger.error(f"Failed to create work item. Status code: {response.status_code}")
-            logger.debug(response.text)
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
-        logger.success("Work item created successfully.")
-        logger.debug(response.json())
+        logger.info("SUCCESS: Work item created successfully.")
         return response.json()["id"]
 
     def change_work_item_state(self, work_item_id: int, state: WorkItemsStatesDef) -> None:
@@ -139,9 +138,8 @@ class _AzBoards:
 
         if response.status_code != 200:
             logger.error(f"Error: {response.status_code}")
-            logger.debug(response.json())
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success(f"State of object changed to {state}.")
+        logger.info(f"SUCCESS: State of object changed to {state}.")
 
     def get_work_items(self, type_of_workitem: WorkItemsDef, **kwargs) -> dict[int, WorkItem]:
         """
@@ -167,6 +165,7 @@ class _AzBoards:
         logger.info(
             f"Retrieving work items of type {type_of_workitem} with states {kwargs.get('allowed_states', 'all')}"
         )
+        states_wiql = None
         if allowed_states := kwargs.get("allowed_states"):
             if isinstance(allowed_states, list):
                 states_wiql = " OR ".join(f"[State] = '{state.value}'" for state in allowed_states)
@@ -179,7 +178,7 @@ class _AzBoards:
             f"Where [System.WorkItemType] = '{type_of_workitem.value}' "
         )
 
-        wiql += "" if not kwargs.get("allowed_states") else f"AND {states_wiql} "
+        wiql += "" if not states_wiql else f"AND {states_wiql} "
 
         wiql += "order by [System.CreatedDate] desc, [Microsoft.VSTS.Common.Priority] asc"
         query = {"query": wiql}
@@ -190,7 +189,7 @@ class _AzBoards:
 
         if response.status_code != HTTPStatus.OK:
             logger.error(f"Failed to retrieve work items. Status code: {response.status_code}")
-            logger.debug(response.text)
+
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
 
         ids = [item["id"] for item in response.json()["workItems"]]
@@ -209,7 +208,6 @@ class _AzBoards:
 
         if details_response.status_code != HTTPStatus.OK:
             logger.error(f"Failed to retrieve work item details. Status code: {details_response.status_code}")
-            logger.debug(details_response.text)
             raise RequestException(f"Response Error. Status Code: {details_response.status_code}.")
 
         work_items = {}
@@ -227,8 +225,8 @@ class _AzBoards:
             except Exception as e:
                 logger.exception(e)
                 logger.error(f"Failed to parse work item {item['id']}. Skipping.")
-        logger.success(
-            f"Retrieved {len(work_items)} work items of type {type_of_workitem} "
+        logger.info(
+            f"SUCCESS: Retrieved {len(work_items)} work items of type {type_of_workitem} "
             f"with states {kwargs.get('allowed_states', 'all')}."
         )
         logger.debug(work_items)
