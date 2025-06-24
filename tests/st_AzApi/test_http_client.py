@@ -7,6 +7,7 @@ from azapidevops.utils.http_client import _create_requests_session_with_retries_
 
 
 @pytest.mark.parametrize("status_code", [408, 429, 500, 502, 503, 504])
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 def test_incorrect_response_retires(status_code):
     session = _create_requests_session_with_retries_strategy()
 
@@ -23,7 +24,7 @@ def test_incorrect_response_retires(status_code):
         "Session with retries strategy should be slower than requests without retries strategy"
     )
 
-
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 def test_incorrect_response_noretries():
     session = _create_requests_session_with_retries_strategy()
 

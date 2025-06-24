@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "High level library for Azure Devops REST API interface!"
 authors = [{ name="Maciej Rosinski", email="m.rosinski97@gmail.com" }]
 readme = "README.md"
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 dependencies  = ["requests>=2.32.3",
 "beartype>=0.21.0",
 "dnspython>=2.7.0",
