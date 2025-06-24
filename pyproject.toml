@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azapidevops"
-version = "0.0.4"
+version = "0.0.1"
 description = "High level library for Azure Devops REST API interface!"
 authors = [{ name="Maciej Rosinski", email="m.rosinski97@gmail.com" }]
 readme = "README.md"
