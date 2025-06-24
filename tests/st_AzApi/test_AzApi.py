@@ -5,9 +5,9 @@ import beartype
 import pytest
 from dotenv import load_dotenv
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_agents import _AzAgents
-from AzApi.utils.AzApi_repos import _AzRepos
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_agents import _AzAgents
+from azapidevops.utils.AzApi_repos import _AzRepos
 
 # logger.remove()
 try:
@@ -24,6 +24,11 @@ AGENT_NAME = os.getenv("AGENT_NAME")
 USER_EMAIL = os.getenv("USER_EMAIL")
 MAIN_BRANCH_NAME = os.getenv("MAIN_BRANCH_NAME")
 
+def test_import_AzApi():
+    try:
+        from azapidevops.AzApi import AzApi
+    except Exception as e:
+        pytest.fail(f"Unexpected exception: {e}")
 
 def test_AzApi_init():
     api = AzApi(organization=ORG, project=PRO, token=PAT)

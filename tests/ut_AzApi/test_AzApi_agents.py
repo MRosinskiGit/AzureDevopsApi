@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 import beartype
 import pytest
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_agents import AgentsBy, _AzAgents
-from tests_AzApi.ut_AzApi.testdata import (
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_agents import AgentsBy, _AzAgents
+from tests.ut_AzApi.testdata import (
     get_agent_capabilities_mock,
     get_agents_list_mock,
     get_pools_list_mock,
@@ -17,7 +17,7 @@ from tests_AzApi.ut_AzApi.testdata import (
 
 @pytest.fixture
 def api_mock():
-    module_path = "AzApi.utils.http_client.requests"
+    module_path = "azapidevops.utils.http_client.requests"
 
     with (
         patch(f"{module_path}.get") as mock_get,

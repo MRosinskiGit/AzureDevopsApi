@@ -4,16 +4,16 @@ import pytest
 from beartype.door import is_bearable
 from loguru import logger
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
-from tests_AzApi.ut_AzApi.testdata import create_workitem_mock, id_details_response_mock, wiql_response_mock
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
+from tests.ut_AzApi.testdata import create_workitem_mock, id_details_response_mock, wiql_response_mock
 
 logger.configure(handlers={})
 
 
 @pytest.fixture
 def api_mock():
-    module_path = "AzApi.utils.http_client.requests"
+    module_path = "azapidevops.utils.http_client.requests"
 
     with (
         patch(f"{module_path}.get") as mock_get,

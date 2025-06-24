@@ -18,13 +18,13 @@ class AzApi:
     @beartype
     def __init__(self, organization: str, project: str, token: str):
         """
-        Constructor for AzApi Tool.
+        Constructor for azapidevops Tool.
         Args:
             organization (str): Azure's organization/owner name.
             project (str): Azure's Project name.
             token (str): Private Access Token for Azures Operations.
         """
-        logger.info("Initializing AzApi Tool...")
+        logger.info("Initializing azapidevops Tool...")
         self.organization = organization
         self.project = project
         self.__b64_token = ...
@@ -100,7 +100,7 @@ class AzApi:
         Returns:
             _AzRepos: AzRepos instance.
         Raises:
-            AzApi.ComponentException: When component is not initiated.
+            azapidevops.ComponentException: When component is not initiated.
         """
         if self.__Repos is Ellipsis:
             raise AzApi.ComponentException(
@@ -139,7 +139,7 @@ class AzApi:
         Returns:
             _AzAgents: AzAgents instance.
         Raises:
-            AzApi.ComponentException: When component is not initiated.
+            azapidevops.ComponentException: When component is not initiated.
         """
         if self.__Agents is Ellipsis:
             raise AzApi.ComponentException(

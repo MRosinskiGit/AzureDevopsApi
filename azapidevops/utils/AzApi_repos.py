@@ -13,7 +13,7 @@ from requests.exceptions import RequestException
 from .http_client import requests
 
 if TYPE_CHECKING:
-    from AzApi.AzApi import AzApi
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class PrStatusesDef(str, Enum):
 
 
 class _AzRepos:
-    def __init__(self, api: "AzApi", repo_name):  # noqa: F821
+    def __init__(self, api: "azapidevops", repo_name):  # noqa: F821
         self.__repo_name = repo_name
         self.__azure_api = api
         logger.info("SUCCESS: Repository Module initiated.")
@@ -200,7 +200,7 @@ class _AzRepos:
             depth (Optional[int]): depth of downloaded history of modifications on repository
             branch (Optional[str]): name of branch to download if different from default
             **kwargs:
-                custom_url (Optional[str]): link to different repository then defined in parent AzApi class.
+                custom_url (Optional[str]): link to different repository then defined in parent azapidevops class.
         Returns:
             str: Path to repository dir.
             or

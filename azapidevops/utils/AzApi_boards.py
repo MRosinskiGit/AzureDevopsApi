@@ -11,10 +11,10 @@ from requests.exceptions import RequestException
 try:
     from .http_client import requests
 except ImportError:
-    from AzApi.utils.http_client import requests
+    from azapidevops.utils.http_client import requests
 
 if TYPE_CHECKING:
-    from AzApi.AzApi import AzApi
+    pass
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +62,7 @@ class WorkItem(BaseModel):
 
 
 class _AzBoards:
-    def __init__(self, api: "AzApi"):  # noqa: F821
+    def __init__(self, api: "azapidevops"):  # noqa: F821
         self.__azure_api = api
 
     def create_new_item(
@@ -85,7 +85,7 @@ class _AzBoards:
             RequestException: If the API request fails or returns a non-OK status code.
 
         Examples:
-            >>> api = AzApi("Org","Pro","PAT")
+            >>> api = azapidevops("Org","Pro","PAT")
             >>> task_id = api.Boards.create_new_item(WorkItemsDef.TestCase,"TC")
         """
         logger.info(f"Creating new item in Boards: {item_name} as {work_item_type}")
@@ -127,7 +127,7 @@ class _AzBoards:
             RequestException: If the API request fails or returns a non-OK status code.
 
         Examples:
-            >>> api = AzApi("Org","Pro","PAT")
+            >>> api = azapidevops("Org","Pro","PAT")
             >>> task_id = api.Boards.create_new_item(WorkItemsDef.TestCase,"TC")
             >>> api.Boards.change_work_item_state(task_id, WorkItemsStatesDef.TestCase.Ready)
         """
@@ -158,7 +158,7 @@ class _AzBoards:
             RequestException: If the API request fails or returns a non-OK status code.
 
         Example:
-            >>> api = AzApi("Org", "Pro", "PAT")
+            >>> api = azapidevops("Org", "Pro", "PAT")
             >>> items = api.Boards.get_work_items(type_of_workitem=WorkItemsDef.Task,
             >>>        allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing])
         """

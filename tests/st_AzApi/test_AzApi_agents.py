@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_agents import AgentsBy
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_agents import AgentsBy
 
 # logger.remove()
 try:

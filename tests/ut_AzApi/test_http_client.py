@@ -1,7 +1,7 @@
 import requests
 from loguru import logger
 
-from AzApi.utils.http_client import _create_requests_session_with_retries_strategy
+from azapidevops.utils.http_client import _create_requests_session_with_retries_strategy
 
 logger.remove()
 

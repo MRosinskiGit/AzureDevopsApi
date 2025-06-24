@@ -6,8 +6,8 @@ from beartype.door import is_bearable
 from dotenv import load_dotenv
 from loguru import logger
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
 
 try:
     env_path = Path(__file__).resolve().parent / "systemtest.env"
@@ -41,7 +41,7 @@ def create_test_task(request):
 def remove_test_task(request):
     yield
     self = request.instance
-    tasks = self.api.Boards.get_work_items(WorkItemsDef.Task)
+    tasks = self.api.Boards.get_work_items(WorkItemsDef.Task, allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing])
     for _, workitem in tasks.items():
         if workitem.title == TEST_TASK_NAME:
             logger.info(f"Removing test task {workitem.id}")
@@ -52,7 +52,7 @@ def remove_test_task(request):
 def remove_test_testcase(request):
     yield
     self = request.instance
-    tasks = self.api.Boards.get_work_items(WorkItemsDef.TestCase)
+    tasks = self.api.Boards.get_work_items(WorkItemsDef.TestCase,allowed_states=[WorkItemsStatesDef.TestCase.Ready, WorkItemsStatesDef.TestCase.Design])
     for _, workitem in tasks.items():
         if workitem.title == TEST_TASK_NAME:
             logger.info(f"Removing test TestCase {workitem.id}")
