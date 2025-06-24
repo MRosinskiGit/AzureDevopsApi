@@ -13,7 +13,7 @@ from requests.exceptions import RequestException
 from .http_client import requests
 
 if TYPE_CHECKING:
-    from azapidevops.AzApi import AzApi
+    pass
 
 logger = logging.getLogger(__name__)
 

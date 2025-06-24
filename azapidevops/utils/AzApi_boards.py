@@ -14,7 +14,7 @@ except ImportError:
     from azapidevops.utils.http_client import requests
 
 if TYPE_CHECKING:
-    from azapidevops.AzApi import AzApi
+    pass
 logger = logging.getLogger(__name__)
 
 

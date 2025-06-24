@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Union
 from requests.exceptions import RequestException
 
 if TYPE_CHECKING:
-    from azapidevops.AzApi import AzApi
+    pass
 from .http_client import requests
 
 logger = logging.getLogger(__name__)
