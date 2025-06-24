@@ -74,7 +74,7 @@ class Tests_AzApi:
             self.api.token = None
 
     def test_repo_setter(self):
-        with patch("azapidevops.azapidevops._AzRepos") as mock_azrepos:
+        with patch("azapidevops.AzApi._AzRepos") as mock_azrepos:
             mock_azrepos_instance = MagicMock()
             mock_azrepos.return_value = mock_azrepos_instance
             self.api.repository_name = "TestRepo"
@@ -82,7 +82,7 @@ class Tests_AzApi:
 
     @pytest.mark.parametrize("repo_name", [123, None])
     def test_repo_setter_exception(self, repo_name):
-        with patch("azapidevops.azapidevops._AzRepos") as mock_azrepos:
+        with patch("azapidevops.AzApi._AzRepos") as mock_azrepos:
             mock_azrepos_instance = MagicMock()
             mock_azrepos.return_value = mock_azrepos_instance
             with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):
@@ -92,7 +92,7 @@ class Tests_AzApi:
         assert self.api.repository_name is Ellipsis
 
     def test_pool_setter(self):
-        with patch("azapidevops.azapidevops._AzAgents") as mock_azagents:
+        with patch("azapidevops.AzApi._AzAgents") as mock_azagents:
             mock_azagents_instance = MagicMock()
             mock_azagents.return_value = mock_azagents_instance
             self.api.agent_pool_name = "TestPool"
@@ -100,7 +100,7 @@ class Tests_AzApi:
 
     @pytest.mark.parametrize("pool_name", [123, None])
     def test_pool_setter_exception(self, pool_name):
-        with patch("azapidevops.azapidevops._AzAgents") as mock:
+        with patch("azapidevops.AzApi._AzAgents") as mock:
             mock_instance = MagicMock()
             mock.return_value = mock_instance
             with pytest.raises(beartype.roar.BeartypeCallHintParamViolation):

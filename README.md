@@ -4,7 +4,7 @@
 
 > **Status**: Early development stage, not all features are implemented yet. The library is under active development and new features are being added regularly.
 
-Current progress and expected features are described in [`CHANGELOG.md`](CHANGELOG.md).
+Current progress and expected features are described in [`CHANGELOG.md`](CHANGELOG.md) on the repository.
 All progress can be tracked on the [GitHub repository](https://github.com/MRosinskiGit/AzureDevopsApi).
 
 ## Features
@@ -40,7 +40,7 @@ Authentication is handled via a Personal Access Token (PAT). You will need to pr
 
 ## Usage
 
-See the [`examples.py`](examples.py) file for practical usage of each module. Short example:
+See the [`examples.py`](examples.py)  file on the repository for practical usage of each module. Short example:
 
 ```python
 from azapidevops.AzApi import AzApi
