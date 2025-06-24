@@ -3,14 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## Unreleased
-### Added
-- Boards: `get_work_items` method ✘
-- System tests ✘ - Ongoing: Repos - 70%, Boards - 0% ✘
-- Preparation for PyPi deploy ✘
-- Boards: Reading objects by SQL ✘
+## [Unreleased]
+### Changed
 - Extended handling of incorrect API response status code ✘
+
+## [0.0.1] - 24-06-2025
+### Added
+- Boards: `get_work_items` method ✔
+- System tests ✔
+- Preparation for PyPi deploy ✔
+### Changed
+- Replaced loguru logging with standard logging module ✔
+- Changed the newest release version to 0.0.1 for PyPi ✔
+- Changed structure of AzApi to match the project convention ✔
 
 ## [1.2.4] - 19.06.2025
 ### Added

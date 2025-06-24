@@ -1,19 +1,21 @@
 import json
+import logging
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from functools import wraps
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-from loguru import logger
 from requests.exceptions import RequestException
 
 from .http_client import requests
 
 if TYPE_CHECKING:
-    from AzApi.AzApi import AzApi
+    pass
+
+logger = logging.getLogger(__name__)
 
 
 def _require_valid_repo_name(method):
@@ -34,13 +36,13 @@ class PrStatusesDef(str, Enum):
 
 
 class _AzRepos:
-    def __init__(self, api: "AzApi", repo_name):  # noqa: F821
+    def __init__(self, api: "azapidevops", repo_name):  # noqa: F821
         self.__repo_name = repo_name
         self.__azure_api = api
-        logger.success("Repository Module initiated.")
+        logger.info("SUCCESS: Repository Module initiated.")
 
     @_require_valid_repo_name
-    def get_active_pull_requests(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+    def get_active_pull_requests(self, raw: bool = False) -> Union[dict[str, dict], list]:
         """
         Gets all active Pull Requests in defined repository.
         Args:
@@ -63,13 +65,12 @@ class _AzRepos:
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success("Response received.")
+        logger.info("SUCCESS: Response received.")
 
         response_json = response.json()
-        logger.success(f"Detected {response_json['count']} active Pull Requests.")
+        logger.info(f"SUCCESS: Detected {response_json['count']} active Pull Requests.")
         for pr_ix, pr_params in enumerate(response_json["value"], 1):
             logger.debug(f"\t{pr_ix}. \t{pr_params['title']} | ID: {pr_params['pullRequestId']}")
             logger.debug(f"\t\tFrom: {pr_params['sourceRefName']} to {pr_params['targetRefName']}")
@@ -105,10 +106,10 @@ class _AzRepos:
         logger.info(f"Creating new PR: {pr_title}")
         if "refs/head" not in source_branch:
             source_branch = "refs/heads/" + source_branch
-            logger.trace(f"Adding prefix to source branch name: {source_branch}")
+            logger.debug(f"TRACE: Adding prefix to source branch name: {source_branch}")
         if "refs/head" not in target_branch:
             target_branch = "refs/heads/" + target_branch
-            logger.trace(f"Adding prefix to target branch name: {target_branch}")
+            logger.debug(f"TRACE: Adding prefix to target branch name: {target_branch}")
 
         active_prs = self.get_active_pull_requests()
         for pr_id, pr_data in active_prs.items():
@@ -118,7 +119,7 @@ class _AzRepos:
 
         logger.debug(f"\t\tFrom: {source_branch} to {target_branch}")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
-        logger.trace(f"Requesting URL: {url}")
+        logger.debug(f"TRACE: Requesting URL: {url}")
         payload = {
             "sourceRefName": source_branch,
             "targetRefName": target_branch,
@@ -129,15 +130,14 @@ class _AzRepos:
 
         response = requests.post(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code != HTTPStatus.CREATED:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
         pr_id = response.json()["pullRequestId"]
-        logger.success(f"Response received. PR numer: {pr_id}")
+        logger.info(f"SUCCESS: Response received. PR numer: {pr_id}")
         return pr_id
 
     @_require_valid_repo_name
-    def get_all_branches(self, raw: bool = False) -> Union[Dict[str, dict], list]:
+    def get_all_branches(self, raw: bool = False) -> Union[dict[str, dict], list]:
         """
         Reads all existing branches on the repo.
         Args:
@@ -157,10 +157,9 @@ class _AzRepos:
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/refs?filter=heads/&api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success("Response received.")
+        logger.info("SUCCESS: Response received.")
         for index, branch in enumerate(response.json()["value"], 1):
             logger.debug(f"\t\t{index}:\t {branch['name']}")
         if raw:
@@ -201,7 +200,7 @@ class _AzRepos:
             depth (Optional[int]): depth of downloaded history of modifications on repository
             branch (Optional[str]): name of branch to download if different from default
             **kwargs:
-                custom_url (Optional[str]): link to different repository then defined in parent AzApi class.
+                custom_url (Optional[str]): link to different repository then defined in parent azapidevops class.
         Returns:
             str: Path to repository dir.
             or
@@ -210,7 +209,7 @@ class _AzRepos:
         custom_url = kwargs.get("custom_url")
         repo_log_name = custom_url if custom_url is not None else self.__repo_name
         logger.info(f"Cloning repository {repo_log_name}...")
-        logger.trace(f"\tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
+        logger.debug(f"TRACE: \tOutput directory: {output_dir}, Depth {depth}, Branch: {branch}")
         git_url_std = f"https://{self.__azure_api.organization}@dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_git/{self.__repo_name}"  # noqa: E501
         repo_url = custom_url if custom_url else git_url_std
         command = ["git", "clone", repo_url]
@@ -246,11 +245,11 @@ class _AzRepos:
         if proc.wait() != 0:
             logger.error(f"Error on cloning - Return code {proc.wait()}")
             raise RuntimeError
-        logger.success("Cloning finished.")
+        logger.info("SUCCESS: Cloning finished.")
         try:
             proc.terminate()
             proc.wait(timeout=5)
-            logger.success("Cloning process terminated.")
+            logger.info("SUCCESS: Cloning process terminated.")
         except subprocess.TimeoutExpired:
             logger.warning("Terminate timed out. Killing process.")
             proc.kill()
@@ -265,6 +264,7 @@ class _AzRepos:
         except FileNotFoundError:
             pass
         logger.warning("Directory not found.")
+        return
 
     @_require_valid_repo_name
     def add_pr_reviewer(self, pr_id: int, email: str):
@@ -284,10 +284,9 @@ class _AzRepos:
         }
         response = requests.put(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code not in [200, 201]:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success(f"Response: {response.status_code}, User added as reviewer.")
+        logger.info(f"SUCCESS: Response: {response.status_code}, User added as reviewer.")
 
     @_require_valid_repo_name
     def delete_branch(self, branch_name: str):
@@ -319,10 +318,9 @@ class _AzRepos:
             url=url, headers=self.__azure_api._headers("application/json"), data=json.dumps(payload)
         )
         if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success("Branch deleted.")
+        logger.info("SUCCESS: Branch deleted.")
 
     def change_pr_status(self, pr_id: int, status: PrStatusesDef):
         """
@@ -338,7 +336,6 @@ class _AzRepos:
         }
         response = requests.patch(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code}")
-            logger.debug(f"Error message: {response.text}")
+            logger.error(f"Connection error: {response.status_code} | {response.reason}")
             raise RequestException(f"Response Error. Status Code: {response.status_code}.")
-        logger.success(f"Response: {response.status_code}, PR status changed to {status}.")
+        logger.info(f"Response: {response.status_code}, PR status changed to {status}.")

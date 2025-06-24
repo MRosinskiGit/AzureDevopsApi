@@ -1,9 +1,15 @@
+import logging
 import tempfile
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_agents import AgentsBy
-from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_agents import AgentsBy
+from azapidevops.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
 
+logging.basicConfig(
+    level=logging.INFO,  # albo INFO, WARNING itp.
+    # format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+# TODO update examples to use azapidevops v1.2.4
 # Examples:
 ## Init
 api = AzApi(organization="ORGANIZATION_NAME", project="PROJECT_NAME", token="PAT")
@@ -14,7 +20,8 @@ api.repository_name = "REPOSITORY_NAME"
 ## Init Agents Pool Component
 api.agent_pool_name = "AGENT_POOL_NAME"
 
-# Boards Examples:
+
+################################################### Boards Examples: ###################################################
 ## Create new Task and TestCase Objects in Boards
 task_id = api.Boards.create_new_item(
     WorkItemsDef.Task, item_name="Review Task", description="Review Task for Documentation"
@@ -27,8 +34,13 @@ testcase_id = api.Boards.create_new_item(
 api.Boards.change_work_item_state(task_id, WorkItemsStatesDef.Task.Done)
 api.Boards.change_work_item_state(testcase_id, WorkItemsStatesDef.TestCase.Closed)
 
+## Get all work items of type Task
+work_items = api.Boards.get_work_items(
+    WorkItemsDef.Task, allowed_states=[WorkItemsStatesDef.Task.To_Do, WorkItemsStatesDef.Task.Doing]
+)
 
-# Repo Examples:
+
+################################################### Repos Examples: ####################################################
 ## Clone repository without history
 api.Repos.clone_repository(tempfile.gettempdir(), branch="main", depth=1, submodules=True)
 
@@ -43,7 +55,8 @@ pr_id = api.Repos.create_pr("Test PullRequest", "TestBranch", "main", "Testing A
 ## Add Reviewer to PR
 api.Repos.add_pr_reviewer(pr_id, "user1@gmail.com")
 
-# Agents Examples:
+
+################################################### Agents Examples: ###################################################
 ## Add Agents userCapabilies
 api.Agents.add_user_capabilities("AgentLab", by=AgentsBy.Agent_Name, capabilities={"buildAvailable": "true"})
 api.Agents.add_user_capabilities("Laboratory-123", by=AgentsBy.PC_Name, capabilities={"buildAvailable": "true"})

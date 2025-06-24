@@ -4,16 +4,16 @@ import beartype
 import pytest
 from loguru import logger
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_repos import PrStatusesDef, _AzRepos
-from tests_AzApi.ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_repos import PrStatusesDef, _AzRepos
+from tests.ut_AzApi.testdata import branch_list_response_mock, create_pr_response_mock, get_active_prs_mock
 
 logger.configure(handlers={})
 
 
 @pytest.fixture
 def api_mock():
-    module_path = "AzApi.utils.http_client.requests"
+    module_path = "azapidevops.utils.http_client.requests"
 
     with (
         patch(f"{module_path}.get") as mock_get,
@@ -155,7 +155,7 @@ class Tests_AzApi_repos:
     def test_clone_repo_default(self, submodules, depth, branch, cwd):
         with (
             patch("subprocess.Popen") as mck_subprocess,
-            patch("AzApi.utils.AzApi_repos.ThreadPoolExecutor") as mck_executor,
+            patch("azapidevops.utils.AzApi_repos.ThreadPoolExecutor") as mck_executor,
         ):
             mck_submit = MagicMock()
             mck_submit.return_value = True
@@ -185,7 +185,7 @@ class Tests_AzApi_repos:
     def test_clone_repo_custom_url(self, submodules, depth, branch, cwd):
         with (
             patch("subprocess.Popen") as mck_subprocess,
-            patch("AzApi.utils.AzApi_repos.ThreadPoolExecutor") as mck_executor,
+            patch("azapidevops.utils.AzApi_repos.ThreadPoolExecutor") as mck_executor,
         ):
             mck_submit = MagicMock()
             mck_submit.return_value = True
