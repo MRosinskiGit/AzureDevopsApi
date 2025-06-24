@@ -22,13 +22,13 @@ AzApi provides a modular, object-oriented interface to the most commonly used Az
 
 ## Installation
 
-Clone and install dependecies from the repository:
+Clone the repository:
 
 ```bash
 git clone https://github.com/MRosinskiGit/AzureDevopsApi.git
-cd AzureDevopsApi
-pip install -r requirements-prod.txt
 ```
+and install dependencies from [pyproject.toml](pyproject.toml) or from [requirements.txt](requirements.txt):
+
 or install directly from PyPi:
 
 ```bash
@@ -65,11 +65,11 @@ AzApi supports logging via the standard Python `logging` module. You can configu
 
 ## Testing
 
-The repository includes both unit and integration tests, located in the `ut_AzApi` folder and systemtests in `st_AzApi` directory. System tests require `systemtest.env` with environment variables for Azure DevOps connection (example with required parameters in [systemtest.env.template](tests/st_AzApi/systemtest.env.template))
+The repository includes both unit and integration tests, located in the `ut_AzApi` folder and system tests in `st_AzApi` directory. System tests require `systemtest.env` with environment variables for Azure DevOps connection (example with required parameters in [systemtest.env.template](tests/st_AzApi/systemtest.env.template))
 
 For testing install production dependencies:
 ```bash
-pip install -r requirements-prod.txt
+pip install -r requirements.txt
 ```
 To run all tests set working directory to main project dir and run:
 
