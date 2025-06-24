@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Boards: `get_work_items` method ✔
 - System tests ✔
-- Preparation for PyPi deploy ✘
+- Preparation for PyPi deploy ✔
 - Extended handling of incorrect API response status code ✘
+### Changed
+- Replaced loguru logging with standard logging module ✔
+- Changed the newest release version to 0.0.1 for PyPi ✔
+- Changed structure of AzApi to match the project convention ✔
 
 ## [1.2.4] - 19.06.2025
 ### Added

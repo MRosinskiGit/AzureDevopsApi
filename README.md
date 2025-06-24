@@ -25,7 +25,7 @@ Clone the repository and install dependencies:
 
 ```bash
 git clone https://github.com/your-username/AzApi.git
-cd AzApi
+cd azapidevops
 pip install -r requirements-prod.txt
 ```
 
@@ -38,8 +38,9 @@ Authentication is handled via a Personal Access Token (PAT). You will need to pr
 See the [`examples.py`](examples.py) file for practical usage of each module. Short example:
 
 ```python
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_boards import WorkItemsDef, WorkItemsStatesDef
+
 api = AzApi(organization="ORGANIZATION_NAME", project="PROJECT_NAME", token="PAT")
 api.repository_name = 'REPO_NAME'
 api.agent_pool_name = 'POOL_NAME'

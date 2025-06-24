@@ -3,7 +3,7 @@ import time
 import pytest
 import requests
 
-from AzApi.utils.http_client import _create_requests_session_with_retries_strategy
+from azapidevops.utils.http_client import _create_requests_session_with_retries_strategy
 
 
 @pytest.mark.parametrize("status_code", [408, 429, 500, 502, 503, 504])

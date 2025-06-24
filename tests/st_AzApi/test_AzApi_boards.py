@@ -6,8 +6,8 @@ from beartype.door import is_bearable
 from dotenv import load_dotenv
 from loguru import logger
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_boards import WorkItem, WorkItemsDef, WorkItemsStatesDef
 
 try:
     env_path = Path(__file__).resolve().parent / "systemtest.env"

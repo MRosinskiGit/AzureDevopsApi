@@ -7,8 +7,8 @@ import pytest
 from dotenv import load_dotenv
 from loguru import logger
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_repos import PrStatusesDef
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_repos import PrStatusesDef
 
 # logger.remove()
 try:

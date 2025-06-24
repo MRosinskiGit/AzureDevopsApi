@@ -5,9 +5,9 @@ import beartype
 import pytest
 from dotenv import load_dotenv
 
-from AzApi.AzApi import AzApi
-from AzApi.utils.AzApi_agents import _AzAgents
-from AzApi.utils.AzApi_repos import _AzRepos
+from azapidevops.AzApi import AzApi
+from azapidevops.utils.AzApi_agents import _AzAgents
+from azapidevops.utils.AzApi_repos import _AzRepos
 
 # logger.remove()
 try:

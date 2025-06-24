@@ -1,3 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "azapidevops"
+version = "0.0.1"
+description = "High level library for Azure Devops REST API interface!"
+authors = [{ name="Maciej Rosinski", email="m.rosinski97@gmail.com" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies  = ["requests>=2.32.3",
+"beartype>=0.21.0",
+"dnspython>=2.7.0",
+"email_validator>=2.2.0",
+"pydantic>=2.11.7"]
+
+[project.urls]
+Homepage = "https://github.com/MRosinskiGit/AzureDevopsApi"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "DEBUG"
+
 [tool.ruff]
 exclude = [
     ".venv",
@@ -19,6 +43,3 @@ unfixable = []
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
-[tool.pytest.ini_options]
-log_cli = true
-log_cli_level = "DEBUG"

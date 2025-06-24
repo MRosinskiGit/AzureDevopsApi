@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Union
 from requests.exceptions import RequestException
 
 if TYPE_CHECKING:
-    from AzApi.AzApi import AzApi
+    from azapidevops.AzApi import AzApi
 from .http_client import requests
 
 logger = logging.getLogger(__name__)
@@ -31,14 +31,14 @@ class AgentsBy(Enum):
 
 
 class _AzAgents:
-    def __init__(self, api: "AzApi", pool_name: str):  # noqa: F821
+    def __init__(self, api: "azapidevops", pool_name: str):  # noqa: F821
         """
         Constructor for Agents Pool control component.
         Args:
-            api: Object of AzApi parent.
+            api: Object of azapidevops parent.
             pool_name: name of agents pool in Azure Devops portal.
         """
-        logger.info("Initializing AzApi Agents Tool.")
+        logger.info("Initializing azapidevops Agents Tool.")
         self.__pool_name = pool_name
         self.__azure_api = api
         self.__all_pools = self.__get_all_pools()
@@ -57,7 +57,7 @@ class _AzAgents:
         Returns:
             dict: dict with agents names and properites
         Examples:
-            >>> api = AzApi('org','pro','pat')
+            >>> api = azapidevops('org','pro','pat')
             >>> api.agent_pool_name = "pool"
             >>> api.Agents.all_agents
                 {"Agents_Name": {
@@ -174,7 +174,7 @@ class _AzAgents:
             dict: dict with user and system capabilities
 
         Examples:
-            >>> api = AzApi('org','pro','pat')
+            >>> api = azapidevops('org','pro','pat')
             >>> api.agent_pool_name = "pool"
             >>> capabilities = api.Agents.get_agent_capabilities("BENCH_LAB_1234", AgentsBy.PC_Name)
             >>> capabilities
@@ -206,7 +206,7 @@ class _AzAgents:
             capabilities (dict): dict with key as name of capabilitiy and value as value
 
         Examples:
-            >>> api = AzApi('org','pro','pat')
+            >>> api = azapidevops('org','pro','pat')
             >>> api.agent_pool_name = "pool"
             >>> capabilities = api.Agents.add_user_capabilities(2, AgentsBy.ID, {"hardware_ready":"true"})
         """
@@ -245,7 +245,7 @@ class _AzAgents:
             capabilities (str or list): names of capabilities to remove.
 
         Examples:
-            >>> api = AzApi('org','pro','pat')
+            >>> api = azapidevops('org','pro','pat')
             >>> api.agent_pool_name = "pool"
             >>> capabilities = api.Agents.remove_user_capabilities(2, AgentsBy.ID, ["hardware_ready","agent_busy"])
         """
