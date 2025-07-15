@@ -3,11 +3,12 @@ import logging
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import wraps
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
+from beartype import beartype
 from requests.exceptions import RequestException
 
 from .http_client import requests
@@ -35,6 +36,14 @@ class PrStatusesDef(str, Enum):
     Completed = "completed"
 
 
+class ReviewStateDef(IntEnum):
+    Approved = 10
+    Approved_with_suggestions = 5
+    No_vote = 0
+    Waiting_for_author = -5
+    Rejected = -10
+
+
 class _AzRepos:
     def __init__(self, api: "azapidevops", repo_name):  # noqa: F821
         self.__repo_name = repo_name
@@ -59,7 +68,9 @@ class _AzRepos:
                 "url": "https://dev.azure.com/org/project/_git/repo/pullrequest/12",
                 "creationDate": "2025-06-04T06:58:04.8778256Z",
                 "sourceRefName": "refs/heads/testbranch",
-                "targetRefName": "refs/heads/master"}}
+                "targetRefName": "refs/heads/master"}},
+                "reviewers": [{"uniqueID":"email@email.com",
+                                "vote": 10,},]
         """
         logger.info("Downloading list of active Pull Requests...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
@@ -74,6 +85,8 @@ class _AzRepos:
         for pr_ix, pr_params in enumerate(response_json["value"], 1):
             logger.debug(f"\t{pr_ix}. \t{pr_params['title']} | ID: {pr_params['pullRequestId']}")
             logger.debug(f"\t\tFrom: {pr_params['sourceRefName']} to {pr_params['targetRefName']}")
+
+        # reviewers_data
         if raw:
             return response_json["value"]
         return {
@@ -83,6 +96,7 @@ class _AzRepos:
                 "creationDate": pr_iter["creationDate"],
                 "sourceRefName": pr_iter["sourceRefName"],
                 "targetRefName": pr_iter["targetRefName"],
+                "reviewers": pr_iter.get("reviewers"),
             }
             for pr_iter in response_json["value"]
         }
@@ -267,20 +281,31 @@ class _AzRepos:
         return
 
     @_require_valid_repo_name
-    def add_pr_reviewer(self, pr_id: int, email: str):
+    @beartype
+    def add_pr_reviewer(
+        self,
+        pr_id: int,
+        user: str,
+        by: Literal["email", "guid"] = "email",
+        state: ReviewStateDef = ReviewStateDef.No_vote,
+    ):
         """
         Adds reviewer to Pull Request.
         Args:
             pr_id (int): ID of pull request
-            email (str): mail of the reviewer.
+            user (str): user identified. By default it's email, but also can be GUID. Configured by `by` attribute
         """
-        logger.info(f"Adding User {email} to PR{pr_id}")
-        descriptor = self.__azure_api.search_user_aad_descriptor_by_email(email)
-        guid = self.__azure_api.get_guid_by_descriptor(descriptor)
+        logger.info(f"Adding User {user} to PR{pr_id}")
+        if by == "email":
+            descriptor = self.__azure_api.search_user_aad_descriptor_by_email(user)
+            guid = self.__azure_api.get_guid_by_descriptor(descriptor)
+        else:
+            guid = user
+
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullRequests/{pr_id}/reviewers/{guid}?api-version=7.2-preview.1"
         payload = {
             "id": guid,
-            "vote": 0,
+            "vote": state.value,
         }
         response = requests.put(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code not in [200, 201]:
