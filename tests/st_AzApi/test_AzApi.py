@@ -30,6 +30,13 @@ def test_import_AzApi():
     except Exception as e:
         pytest.fail(f"Unexpected exception: {e}")
 
+def test_import_AzApi():
+    try:
+        pass
+    except Exception as e:
+        pytest.fail(f"Unexpected exception: {e}")
+
+
 def test_AzApi_init():
     api = AzApi(organization=ORG, project=PRO, token=PAT)
     assert isinstance(api, AzApi)
