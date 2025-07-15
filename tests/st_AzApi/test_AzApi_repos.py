@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from azapidevops.AzApi import AzApi
-from azapidevops.utils.AzApi_repos import PrStatusesDef
+from azapidevops.utils.AzApi_repos import PrStatusesDef, ReviewStateDef
 
 # logger.remove()
 try:
@@ -23,6 +23,7 @@ REPO = os.getenv("REPOSITORY")
 POOL = os.getenv("AGENT_POOL")
 AGENT_NAME = os.getenv("AGENT_NAME")
 USER_EMAIL = os.getenv("USER_EMAIL")
+USER_GUID = os.getenv("USER_GUID")
 MAIN_BRANCH_NAME = os.getenv("MAIN_BRANCH_NAME")
 TEST_BRANCH_NAME = "tmp_systemtest_branch"
 
@@ -109,9 +110,32 @@ class Test_AzApi_Repos_functions_correct_pat:
         repo_path = self.api.Repos.clone_repository(output_path, submodules, depth, branch, **kwargs)
         assert os.path.exists(os.path.join(repo_path, ".git"))
 
-    # def test_add_pr_reviewer(self):
-    #     pass
-    #
+    @pytest.mark.parametrize("by", ["email", "guid"])
+    @pytest.mark.parametrize(
+        "state",
+        [
+            ReviewStateDef.Approved,
+            ReviewStateDef.No_vote,
+            ReviewStateDef.Rejected,
+            ReviewStateDef.Approved_with_suggestions,
+            ReviewStateDef.Waiting_for_author,
+        ],
+    )
+    def test_add_pr_reviewer_by_email(self, fixture_create_and_push_test_branch, by, state):
+        pr_id = self.api.Repos.create_pr("Test Branch", TEST_BRANCH_NAME, f"refs/heads/{MAIN_BRANCH_NAME}")
+        if by == "email":
+            self.api.Repos.add_pr_reviewer(pr_id, USER_EMAIL, state=state)
+        else:
+            self.api.Repos.add_pr_reviewer(pr_id, USER_GUID, by=by, state=state)
+        pr_data = self.api.Repos.get_active_pull_requests()
+        pr_data = pr_data.get(pr_id)
+        pr_data = pr_data.get("reviewers")
+        reviewer_set_correctly = False
+        for reviewer in pr_data:
+            if reviewer.get("uniqueName") == USER_EMAIL and reviewer.get("vote") == state:
+                reviewer_set_correctly = True
+        assert reviewer_set_correctly
+
     # def test_get_active_pull_requests(self, fixture_create_and_push_test_branch):
     #     print("test")
     #
