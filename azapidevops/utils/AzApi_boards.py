@@ -6,10 +6,9 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Optional, Union
 
 from pydantic import BaseModel, EmailStr
-from requests.exceptions import RequestException
 
 try:
-    from .http_client import requests
+    from .http_client import handle_incorrect_response, requests
 except ImportError:
     from azapidevops.utils.http_client import requests
 
@@ -108,9 +107,8 @@ class _AzBoards:
 
         response = requests.post(url, headers=self.__azure_api._headers(), data=json.dumps(payload))
 
-        if response.status_code != 200:
-            logger.error(f"Failed to create work item. Status code: {response.status_code}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
 
         logger.info("SUCCESS: Work item created successfully.")
         return response.json()["id"]
@@ -136,9 +134,8 @@ class _AzBoards:
         data = [{"op": "add", "path": "/fields/System.State", "value": state}]
         response = requests.patch(url, headers=self.__azure_api._headers(), json=data)
 
-        if response.status_code != 200:
-            logger.error(f"Error: {response.status_code}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info(f"SUCCESS: State of object changed to {state}.")
 
     def get_work_items(self, type_of_workitem: WorkItemsDef, **kwargs) -> dict[int, WorkItem]:
@@ -188,9 +185,7 @@ class _AzBoards:
         logger.debug(f"WIQL Query: {wiql}")
 
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Failed to retrieve work items. Status code: {response.status_code}")
-
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
 
         ids = [item["id"] for item in response.json()["workItems"]]
         if not ids:
@@ -207,8 +202,7 @@ class _AzBoards:
         details_response = requests.get(details_url, headers=self.__azure_api._headers())
 
         if details_response.status_code != HTTPStatus.OK:
-            logger.error(f"Failed to retrieve work item details. Status code: {details_response.status_code}")
-            raise RequestException(f"Response Error. Status Code: {details_response.status_code}.")
+            handle_incorrect_response(response)
 
         work_items = {}
         for item in details_response.json()["value"]:

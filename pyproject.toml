@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azapidevops"
-version = "0.0.2"
+version = "0.0.3"
 description = "High level library for Azure Devops REST API interface!"
 authors = [{ name="Maciej Rosinski", email="m.rosinski97@gmail.com" }]
 readme = "README.md"
@@ -43,3 +43,17 @@ unfixable = []
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
+[tool.pylint.MASTER]
+ignore = [".venv", "tests"]
+enable = ["all"]
+disable = [
+    "W1203", # Not using lazy logging - to be optimized one day
+    "C0114", # Missing module docstring
+    "W0212", # Access to a protected member
+    "R0914", # Too many local variables
+    "C0103", # Invalid name
+    "C0115", # Missing class docstring
+    "C0301", # Line too long
+    "R0902", # Too many instance attributes
+]
+max-line-length = 120

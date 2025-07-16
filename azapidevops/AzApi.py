@@ -4,12 +4,11 @@ from http import HTTPStatus
 from typing import Union
 
 from beartype import beartype
-from requests.exceptions import RequestException
 
 from .utils.AzApi_agents import _AzAgents
 from .utils.AzApi_boards import _AzBoards
 from .utils.AzApi_repos import _AzRepos
-from .utils.http_client import requests
+from .utils.http_client import handle_incorrect_response, requests
 
 logger = logging.getLogger(__name__)
 
@@ -175,8 +174,7 @@ class AzApi:
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/users?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
         all_data_dict = {}
         for user in response.json()["value"]:
             if user.get("mailAddress"):
@@ -189,8 +187,7 @@ class AzApi:
             url = f"https://vssps.dev.azure.com/SW4ZF/_apis/graph/users?api-version=7.2-preview.1&continuationToken={continuation_token}"
             response = requests.get(url, headers=self._headers())
             if response.status_code != HTTPStatus.OK:
-                logger.error(f"Connection error: {response.status_code} | {response.reason}")
-                raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+                handle_incorrect_response(response)
 
             for user in response.json()["value"]:
                 if user.get("mailAddress"):
@@ -243,8 +240,7 @@ class AzApi:
         url = f"https://vssps.dev.azure.com/{self.organization}/_apis/graph/storageKeys/{descriptor}?api-version=7.2-preview.1"
         response = requests.get(url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
         response = response.json()
         guid = response.get("value")
         logger.info(f"SUCCESS: GUID found: {guid}")
@@ -260,6 +256,5 @@ class AzApi:
         url = f"https://dev.azure.com/{self.organization}/{self.project}"
         response = requests.get(url=url, headers=self._headers())
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
         logger.info(f"SUCCESS: Connection to {self.organization}/{self.project} established successfully.")
