@@ -9,9 +9,8 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from beartype import beartype
-from requests.exceptions import RequestException
 
-from .http_client import requests
+from .http_client import handle_incorrect_response, requests
 
 if TYPE_CHECKING:
     pass
@@ -23,7 +22,7 @@ def _require_valid_repo_name(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         repo_name = getattr(self, "_AzRepos__repo_name", None)
-        if not isinstance(repo_name, str) or repo_name == "":
+        if not isinstance(repo_name, str) or not repo_name:
             raise AttributeError("Invalid repository name: must be a non-empty string.")
         return method(self, *args, **kwargs)
 
@@ -75,9 +74,8 @@ class _AzRepos:
         logger.info("Downloading list of active Pull Requests...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/pullrequests?api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info("SUCCESS: Response received.")
 
         response_json = response.json()
@@ -144,8 +142,7 @@ class _AzRepos:
 
         response = requests.post(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code != HTTPStatus.CREATED:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
         pr_id = response.json()["pullRequestId"]
         logger.info(f"SUCCESS: Response received. PR numer: {pr_id}")
         return pr_id
@@ -170,9 +167,8 @@ class _AzRepos:
         logger.info("Reading list of all branches...")
         url = f"https://dev.azure.com/{self.__azure_api.organization}/{self.__azure_api.project}/_apis/git/repositories/{self.__repo_name}/refs?filter=heads/&api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info("SUCCESS: Response received.")
         for index, branch in enumerate(response.json()["value"], 1):
             logger.debug(f"\t\t{index}:\t {branch['name']}")
@@ -256,7 +252,7 @@ class _AzRepos:
             executor.submit(__thread_pool_stream_reader, proc.stderr, logger.debug)
             logger.debug("Reading stderr initialized...")
 
-        if proc.wait() != 0:
+        if proc.wait():
             logger.error(f"Error on cloning - Return code {proc.wait()}")
             raise RuntimeError
         logger.info("SUCCESS: Cloning finished.")
@@ -308,9 +304,8 @@ class _AzRepos:
             "vote": state.value,
         }
         response = requests.put(url, json=payload, headers=self.__azure_api._headers("application/json"))
-        if response.status_code not in [200, 201]:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code not in [HTTPStatus.OK, HTTPStatus.CREATED]:
+            handle_incorrect_response(response)
         logger.info(f"SUCCESS: Response: {response.status_code}, User added as reviewer.")
 
     @_require_valid_repo_name
@@ -342,9 +337,8 @@ class _AzRepos:
         response = requests.post(
             url=url, headers=self.__azure_api._headers("application/json"), data=json.dumps(payload)
         )
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info("SUCCESS: Branch deleted.")
 
     def change_pr_status(self, pr_id: int, status: PrStatusesDef):
@@ -361,6 +355,5 @@ class _AzRepos:
         }
         response = requests.patch(url, json=payload, headers=self.__azure_api._headers("application/json"))
         if response.status_code != HTTPStatus.OK:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+            handle_incorrect_response(response)
         logger.info(f"Response: {response.status_code}, PR status changed to {status}.")

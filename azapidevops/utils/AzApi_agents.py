@@ -2,13 +2,14 @@ import json
 import logging
 from enum import Enum, auto
 from functools import wraps
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Union
 
-from requests.exceptions import RequestException
+from .http_client import handle_incorrect_response, requests
 
 if TYPE_CHECKING:
     pass
-from .http_client import requests
+
 
 logger = logging.getLogger(__name__)
 
@@ -82,9 +83,8 @@ class _AzAgents:
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools?api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
 
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.debug(f"Found {response.json()['count']} pools.")
         response_json = response.json()["value"]
         logger.info("SUCCESS: Pools list updated.")
@@ -111,9 +111,8 @@ class _AzAgents:
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{pool_id}/agents?api-version=7.1"
         response = requests.get(url, headers=self.__azure_api._headers())
 
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.debug(f"Found {response.json()['count']} agents.")
         response_json = response.json()["value"]
         result = {}
@@ -186,9 +185,8 @@ class _AzAgents:
         key = self.__resolve_agent_key(key, by)
         url = f"https://dev.azure.com/{self.__azure_api.organization}/_apis/distributedtask/pools/{self.__pool_id}/agents/{key}?includeCapabilities=true&api-version=7.2-preview.1"
         response = requests.get(url, headers=self.__azure_api._headers())
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
 
         response_json = response.json()
         return {
@@ -229,9 +227,8 @@ class _AzAgents:
             url, headers=self.__azure_api._headers("application/json"), data=json.dumps(new_capabilities)
         )
 
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info("SUCCESS: Capabilities modified.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities
 
@@ -271,8 +268,7 @@ class _AzAgents:
             url, headers=self.__azure_api._headers("application/json"), data=json.dumps(new_capabilities)
         )
 
-        if response.status_code != 200:
-            logger.error(f"Connection error: {response.status_code} | {response.reason}")
-            raise RequestException(f"Response Error. Status Code: {response.status_code}.")
+        if response.status_code != HTTPStatus.OK:
+            handle_incorrect_response(response)
         logger.info("SUCCESS: Capabilities removed.")
         self.__all_agents[agent_name]["capabilities"]["userCapabilities"] = new_capabilities
