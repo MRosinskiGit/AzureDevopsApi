@@ -24,11 +24,6 @@ AGENT_NAME = os.getenv("AGENT_NAME")
 USER_EMAIL = os.getenv("USER_EMAIL")
 MAIN_BRANCH_NAME = os.getenv("MAIN_BRANCH_NAME")
 
-def test_import_AzApi():
-    try:
-        from azapidevops.AzApi import AzApi
-    except Exception as e:
-        pytest.fail(f"Unexpected exception: {e}")
 
 def test_import_AzApi():
     try:

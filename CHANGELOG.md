@@ -5,8 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### Changed
-- Extended handling of incorrect API response status code ✘
+- Clean up code for pylint analysis ✘
+- Updated README with new features and usage examples ✘
 
+## [0.0.3] - 17-07-2025
+### Changed
+- Extended logging to include more details about API requests and responses (Debug level) ✔
 
 ## [0.0.2] - 15-07-2025
 ### Added
