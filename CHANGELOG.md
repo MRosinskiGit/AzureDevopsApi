@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Repos: `add_pr_reviewer` attribute `email` was changed to `user`. Method now supports adding reviewer by GUID and allows to set/change review status with `ReviewStateDef` enum.
 
+
+## [0.0.2] - 15-07-2025
+### Added
+- Repos: `get_active_pull_requests` now returns info about active reviewers ✔
+
+### Changed
+- Repos: `add_pr_reviewer` attribute `email` was changed to `user`. Method now supports adding reviewer by GUID and allows to set/change review status with `ReviewStateDef` enum.
+
 ## [0.0.1] - 24-06-2025
 ### Added
 - Boards: `get_work_items` method ✔
